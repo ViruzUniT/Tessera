@@ -8,9 +8,14 @@
 std::unordered_map<HWND, Ngin::Window*> Ngin::Window::windows;
 std::vector<HWND> Ngin::Window::windowsToClose;
 
-LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) {
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam,
+  LPARAM lParam);
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+  if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam))
+    return true;
   Ngin::Window* window = Ngin::Window::GetWindow(hwnd);
-  switch (message) {
+  switch (msg) {
     case WM_KEYDOWN:
       if (wParam == VK_F11) {
         Ngin::logDebug(std::format("Setting window fullscreen: {}", !window->fullscreen));
@@ -21,9 +26,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
       Ngin::logTrace("Window created :)");
       return 0;
     case WM_SIZE:
-      if (lParam &&
-          (HIWORD(lParam) != window->dimensions.y || LOWORD(lParam) != window->dimensions.x) &&
-          window != nullptr) {
+      if (lParam && window != nullptr &&
+          (HIWORD(lParam) != window->dimensions.y || LOWORD(lParam) != window->dimensions.x)) {
         Ngin::logTrace("Resizing window");
         Ngin::Error err = window->Resize();
         if (err.code != Ngin::ErrorCode::None)
@@ -39,7 +43,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam) 
       return 0;
 
     default:
-      return DefWindowProc(hwnd, message, wParam, lParam);
+      return DefWindowProc(hwnd, msg, wParam, lParam);
   }
 }
 
@@ -99,6 +103,8 @@ Window::Window(uint16_t width, uint16_t height, std::string_view name, std::stri
     return;
   }
 
+  logTrace("Creating imgui");
+  imgui = std::make_unique<DearImGui>(rhi, hwnd);
   windows.insert_or_assign(hwnd, this);
 };
 
@@ -132,6 +138,7 @@ Error Window::Update() {
   if (hwnd == 0) {
     return Error{PlatformError, "Window handle is NULL"};
   }
+  static bool showDemoWindow = false;
 
   CheckForClosableWindows();
 
@@ -146,15 +153,45 @@ Error Window::Update() {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }
+  // TODO
+  // Handle window screen locked
+
   Error err = rhi->BeginFrame();
   if (err)
     return err;
 
+  ImGui_ImplDX12_NewFrame();
+  ImGui_ImplWin32_NewFrame();
+  ImGui::NewFrame();
+
+  if (showDemoWindow)
+    ImGui::ShowDemoWindow();
+  {
+    static float f = 0.0f;
+    static int counter = 0;
+
+    ImGui::Begin("Fuck yeah");
+
+    ImGui::Text("Text ig");
+    ImGui::SliderFloat("floaty boi", &f, 0.f, 100.1f);
+
+    if (ImGui::Button("Count my ass"))
+      counter++;
+    ImGui::SameLine();
+    ImGui::Text("counter: = %d", counter);
+
+    ImGui::Checkbox("Demo Window", &showDemoWindow);
+    ImGui::End();
+  }
+
   rhi->Draw(dimensions);
+
+  imgui->Render();
 
   err = rhi->EndFrame();
   if (err)
     return err;
+
   err = rhi->Update();
   if (err)
     return err;

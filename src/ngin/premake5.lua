@@ -3,6 +3,11 @@ kind("StaticLib")
 language("C++")
 cppdialect("C++23")
 staticruntime("off")
+defines({
+	"_DISABLE_STRING_ANNOTATION",
+	"_DISABLE_VECTOR_ANNOTATION",
+	"_DISABLE_OPTIONAL_ANNOTATION",
+})
 pchheader("ngin/pch.h")
 pchsource("src/pch.cpp")
 
@@ -15,6 +20,13 @@ files({
 	"**.h",
 	"**.c",
 	"shaders/**.hlsl",
+	"../../vendor/imgui/imgui.cpp",
+	"../../vendor/imgui/imgui_demo.cpp",
+	"../../vendor/imgui/imgui_draw.cpp",
+	"../../vendor/imgui/imgui_tables.cpp",
+	"../../vendor/imgui/imgui_widgets.cpp",
+	"../../vendor/imgui/backends/imgui_impl_dx12.cpp",
+	"../../vendor/imgui/backends/imgui_impl_win32.cpp",
 })
 
 includedirs({
@@ -32,6 +44,7 @@ buildoptions({
 	"-Wall",
 	"-Wextra",
 	"-Wunused-result",
+	"-fsanitize=undefined,address",
 })
 
 filter("toolset:msc")

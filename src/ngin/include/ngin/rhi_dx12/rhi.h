@@ -8,6 +8,8 @@
 
 #include <array>
 
+#include "ngin/rhi_dx12/descritporAllocator.h"
+
 namespace Ngin {
 class RHI : public NonCopyableNonMovable {
  public:
@@ -18,7 +20,7 @@ class RHI : public NonCopyableNonMovable {
     ReleaseBuffers();
   }
   static Error Create(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen,
-    Scope<RHI>& rhi);
+    Ref<RHI>& rhi);
 
  public:
   Error Update();
@@ -53,13 +55,22 @@ class RHI : public NonCopyableNonMovable {
     }
   }
 
+ public:
+  // currently only used for imgui
+  inline ID3D12Device10* getDevice() const { return device.get(); }
+  inline ID3D12CommandQueue* getCmdQueue() const { return cmdQueue.get(); }
+  inline ID3D12DescriptorHeap* getRtvHeap() const { return rtvHeap.get(); }
+  inline ID3D12DescriptorHeap* getSrvDescriptorHeap() const { return srvDescriptorHeap.get(); }
+  inline ID3D12GraphicsCommandList7* getCmdList() const { return cmdList.get(); }
+  inline ExampleDescriptorHeapAllocator* getSrvHeap() const { return srvHeap.get(); }
+  static constexpr DXGI_FORMAT COLOR_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
+
  private:
   RHI(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen, Error& err);
 
  private:
   static constexpr uint32_t SWAPCHAIN_FLAGS =
     DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-  static constexpr DXGI_FORMAT COLOR_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
 
   // Temp
   constexpr static Vertex verticies[] = {
@@ -76,12 +87,14 @@ class RHI : public NonCopyableNonMovable {
   ComScope<IDXGIFactory7> factory;
   ComScope<IDXGISwapChain4> swapchain;
   ComScope<ID3D12DescriptorHeap> rtvHeap;
+  ComScope<ID3D12DescriptorHeap> srvDescriptorHeap;
   Array<D3D12_CPU_DESCRIPTOR_HANDLE, FRAME_COUNT> rtvHandles;
   ComScope<ID3D12Resource2> uploadBuffer, vertexBuffer;
   ComScope<ID3D12RootSignature> rootSignature;
   ComScope<ID3D12PipelineState> pipelineState;
   D3D12_VERTEX_BUFFER_VIEW vbv;
   Array<ComScope<ID3D12Resource2>, FRAME_COUNT> buffers;
+  Scope<ExampleDescriptorHeapAllocator> srvHeap;
   uint8_t currentBuffer = 0;
   bool& fullscreen;
 
@@ -94,5 +107,6 @@ class RHI : public NonCopyableNonMovable {
   Error CreateSwapChain(HWND hwnd, Vec2Rounded windowDimensions);
   Error CreateRtvHeap();
   Error CreateUploadAndVertexBuffer();
+  Error CreateSrvHeap();
 };
 }  // namespace Ngin

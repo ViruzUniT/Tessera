@@ -3,6 +3,11 @@ kind("ConsoleApp")
 language("C++")
 cppdialect("C++23")
 staticruntime("off")
+defines({
+	"_DISABLE_STRING_ANNOTATION",
+	"_DISABLE_VECTOR_ANNOTATION",
+	"_DISABLE_OPTIONAL_ANNOTATION",
+})
 
 targetdir("../../bin/" .. outputdir .. "/%{prj.name}")
 objdir("../../bin-int/" .. outputdir .. "/%{prj.name}")
@@ -15,6 +20,7 @@ files({
 })
 
 includedirs({
+	"../../vendor/imgui",
 	"../ngin/include",
 	".",
 })
@@ -33,6 +39,7 @@ buildoptions({
 	"-Wextra",
 	"-Wunused-result",
 })
+linkoptions({ "-fsanitize=undefined,address" })
 
 filter("toolset:msc")
 warnings("Extra")
@@ -87,6 +94,7 @@ prebuildcommands(shaderCommands)
 links({
 	"user32",
 	"gdi32",
+	"dwmapi",
 	"d3d12",
 	"dxgi",
 	"dxguid",
