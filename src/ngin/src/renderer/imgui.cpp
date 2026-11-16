@@ -64,5 +64,4 @@ Error DearImGui::Render() {
   ImGui::RenderPlatformWindowsDefault();
   return Error{};
 }
-
 }  // namespace Ngin
