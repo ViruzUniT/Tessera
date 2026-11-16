@@ -43,6 +43,7 @@ buildoptions({
 	"-Wunused-result",
 	"-Wall",
 	"-Wextra",
+	"-Werror",
 	"-Wunused-result",
 	"-fsanitize=undefined,address",
 })

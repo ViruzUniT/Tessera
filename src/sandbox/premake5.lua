@@ -37,6 +37,7 @@ buildoptions({
 	"-Wunused-result",
 	"-Wall",
 	"-Wextra",
+	"-Werror",
 	"-Wunused-result",
 })
 linkoptions({ "-fsanitize=undefined,address" })

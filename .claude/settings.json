@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./build.ps1 *)",
+      "PowerShell(./build.ps1 *)",
+      "PowerShell(.\\build.ps1 *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(clang-format *)"
+    ],
+    "deny": [
+      "Edit(vendor/**)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/format.js\"",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
