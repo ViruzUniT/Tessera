@@ -3,6 +3,11 @@ kind("StaticLib")
 language("C++")
 cppdialect("C++23")
 staticruntime("off")
+defines({
+	"_DISABLE_STRING_ANNOTATION",
+	"_DISABLE_VECTOR_ANNOTATION",
+	"_DISABLE_OPTIONAL_ANNOTATION",
+})
 pchheader("ngin/pch.h")
 pchsource("src/pch.cpp")
 
