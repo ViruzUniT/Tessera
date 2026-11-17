@@ -1,89 +1,111 @@
 # Architecture
 
-Ngin should separate engine-facing renderer code from backend-specific graphics API code. The main purpose of the architecture is to keep DirectX 12 implementation details from spreading through the whole project, so Vulkan can be added later without rewriting the renderer.
+Tessera is a C++23 engine built in two parts: a **code-only engine library** first, and an **editor** on top of it later. It renders through DirectX 12 and Vulkan behind one backend-neutral API, and supports several windows from the start.
 
-## Layers
+## Products
 
-`Core` contains shared infrastructure: logging, assertions, common types, diagnostics, memory helpers, and platform-neutral utilities. It must not depend on a graphics backend.
+| Product | What it is | When |
+|---|---|---|
+| `Tessera` | Static library: core, platform, renderer, RHI, backends. Everything user code needs. | Now |
+| `dev_ui` | Optional ImGui module (context, panels, per-backend bindings). `DEBUG`/`STAGING` only. | Now (as a module from M2) |
+| `Sandbox` | Sample and test app that uses only the public API. Not renamed; it's a test harness. | Now |
+| `Editor` | ImGui docking editor built on `Tessera` + `dev_ui`. | M6 |
+| Scripting | Luau scripts driving entities in the editor and runtime. | M7 |
 
-`Platform` owns OS-facing behavior such as windows, input, timing, and platform services. Windows support is required first for DX12. Linux support is future-facing and should not force the initial DX12 implementation to become cross-platform before it exists.
+Milestones: `docs/roadmap.md`.
 
-`Renderer` is the engine-facing rendering layer. It exposes the APIs that the app, tools, 2D renderer, and 3D renderer use. It should describe rendering work in backend-neutral terms.
+## Goals
 
-`RHI` is the rendering hardware interface. It defines the common contracts for devices, queues, swapchains, command lists, buffers, textures, descriptors, pipelines, and synchronization.
+- **Production quality for library users.** The public API, its documentation, error reporting and code quality aim at a level other people could ship with: clear ownership, no surprising behaviour, failures that say what went wrong, nothing undefined.
+- **Production-grade features and performance, reached by iterating.** That's the target, not the bar for every step. A simpler version that works is fine first; known shortcomings and better approaches go in `docs/improvements.md` and get revisited, not forced in up front.
+- **Backend-independent user code.** Apps include only Tessera's public headers and never see DX12/Vulkan types, `windows.h` or ImGui backends. The backend is a startup option.
+- **Honest feature differences.** Where one backend lacks a feature, the API reports it through a capability query (`device.Supports(Feature::...)`). It doesn't emulate the feature silently or hide it.
+- **Multi-window by design.** One device, any number of windows, each with its own swapchain. ImGui multi-viewport windows use the same path.
+- **Performance stays visible.** The RHI doesn't hide concepts (frames in flight, barriers, descriptors) when hiding them would make both backends worse.
 
-`RHI_DX12` implements the RHI using DirectX 12. It owns native DX12 objects and DX12-specific lifetime/synchronization details.
+## Layers and dependency direction
 
-`RHI_Vulkan` will implement the same RHI contracts using Vulkan later. It should not require app or high-level renderer code to be rewritten.
+```txt
+App / Sandbox / Editor
+  -> dev_ui (optional)
+  -> renderer
+    -> rhi                     backend-neutral contracts
+      -> rhi_dx12 | rhi_vulkan  native objects, private
+platform, core: usable by every layer above
+```
 
-`DevUI` owns ImGui debug/testing panels and backend-specific ImGui setup. It is compiled only when dev UI is enabled.
+| Module | Owns | Must not |
+|---|---|---|
+| `core` | Types, `Error`, logging, asserts, config checks, memory helpers. | Depend on any other module or OS/graphics header. |
+| `platform` | OS windows, events, input, timing, files. Window = native handle + events. | Know about rendering, RHI or ImGui. |
+| `rhi` | Contracts: device, swapchain, queues, command lists, buffers, textures, descriptors, pipelines, sync, capabilities. Typed handles. | Include native graphics headers. |
+| `rhi_dx12`, `rhi_vulkan` | Native objects, lifetime, synchronization, translation of descriptions, ImGui renderer binding, debug/validation layers. | Leak through public headers. |
+| `renderer` | Engine-facing API: frame loop, frames in flight, render targets per window, 2D/3D paths. | Name a specific backend. |
+| `dev_ui` | ImGui context and panels; calls the backend binding through the RHI. Guarded by `TESSERA_DEV_UI`. | Be required by `renderer` or RELEASE builds. |
 
-## Folder Layout
+## App model
 
-Current source folders use lowercase names and underscores:
+The **library core** works without owning `main()`. The user creates windows and a renderer, and drives the loop themselves.
+
+An optional **`Application`** layer (`OnInit`/`OnUpdate`/`OnRender`, loop and event dispatch) sits on top of the same public API. The editor and scripted runtime use it later, and simple apps can too.
+
+## Backend policy
+
+**Shared** (written once): resource/pipeline/shader descriptions, material and shader metadata, frame scheduling concepts, 2D batching, 3D submission, dev UI panels.
+
+**Per backend**: device and swapchain creation, allocation, descriptor model, command recording, synchronization, pipeline objects, shader bytecode loading, ImGui renderer binding, validation layer setup.
+
+**Shaders**: HLSL is the single source. DXC compiles it offline to DXIL (DX12) and SPIR-V (Vulkan). The pinned DXC is fetched by the build. The engine owns and ships its own shaders.
+
+**Selecting a backend**: chosen when the renderer is created (e.g. `RendererDesc::backend = Backend::DX12 | Vulkan | Auto`). Code that only exists for one backend is compiled only where that backend is available.
+
+## Multi-window model
+
+- One device per process; windows are created and destroyed independently.
+- Each window gets a swapchain (back buffers, views, resize) created by the device.
+- The renderer records per window/target; frames in flight are per swapchain.
+- Window lookup uses per-window user data, not a global map.
+
+## Configurations
+
+| Config | Optimized | Diagnostics, validation | `dev_ui` / ImGui |
+|---|---|---|---|
+| `DEBUG` | no | yes | yes |
+| `STAGING` | yes | yes | yes |
+| `RELEASE` | yes | no | never compiled |
+
+`core/config.h` turns invalid combinations into build errors.
+
+## Principles to keep
+
+These come from the architecture review and stay as the code grows:
+
+- **Single owner per GPU object** (`ComScope`, `Scope`), with a visible release point; GPU work completes before release.
+- **Error values, no exceptions**: failures surface at the call that caused them.
+- **Compile-time config checks** in `core/config.h`.
+- **Offline, pinned shader compiler**: reproducible builds, no runtime compiler.
+- **Linear, explicit creation**: construction reads top to bottom in dependency order.
+
+## Folder layout
+
+Lowercase folders with underscores. Public headers and implementation live in parallel trees.
 
 ```txt
 src/
-  ngin/
-    core/
-    platform/
-    renderer/
-    rhi/
-    rhi_dx12/
-    dev_ui/
-  sandbox/
+  tessera/
+    include/tessera/<module>/   public headers, included as <tessera/<module>/...>
+    src/<module>/               implementations (backend headers move here in M2)
+    shaders/                    HLSL sources
+  sandbox/                      sample app
+  editor/                       later (M6)
+vendor/                         third-party submodules (imgui, ...)
+build/                          generated project files
+bin/, bin-int/                  build outputs
 ```
 
-Conceptual module names such as `Core`, `Renderer`, `RHI_DX12`, and `DevUI` refer to these folders in documentation. Concrete includes, build scripts, and Premake paths should use the actual lowercase folder names.
+Module names in docs (`renderer`, `rhi_dx12`, `dev_ui`) are the folder names.
 
-## Dependency Direction
+## Future rendering paths
 
-Dependencies should flow inward:
-
-```txt
-App / Tools
-  -> Renderer
-    -> RHI
-      -> rhi_dx12 or future Vulkan backend
-```
-
-High-level code must not include DX12 or Vulkan headers directly. Backend headers should stay in backend modules.
-
-## 3D Rendering
-
-The 3D renderer should use shared renderer and RHI systems for:
-
-- Mesh buffers.
-- Material data.
-- Texture resources.
-- Pipeline descriptions.
-- Camera and transform data.
-- Render passes or equivalent frame graph concepts.
-
-Backend-specific code should translate those descriptions into native DX12 objects first, and Vulkan objects later.
-
-## 2D Rendering
-
-The 2D renderer should also use the same renderer/RHI path. It should not be a separate graphics backend.
-
-Expected 2D systems include:
-
-- Batched textured quads.
-- Sprite atlases.
-- SDF or atlas-based text.
-- Simple debug drawing.
-- UI/testing overlays for development builds.
-
-## Dev UI
-
-ImGui belongs in the `DevUI` layer and backend integration code. It should not become a required dependency of release runtime systems.
-
-Use a build macro such as:
-
-```cpp
-#if NGIN_DEV_UI
-// ImGui-only code.
-#endif
-```
-
-`NGIN_DEV_UI` is enabled only for `DEBUG` and `STAGING`.
+- **2D**: batched textured quads, sprite atlases, SDF/atlas text, debug drawing. Same renderer/RHI path, not a separate backend.
+- **3D**: mesh buffers, materials, textures, pipeline descriptions, camera/transforms, render passes (a frame graph later if needed).
