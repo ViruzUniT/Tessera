@@ -8,8 +8,8 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 
 - [x] Rename the project to Tessera (namespace, include paths, macros, premake projects, docs). Sandbox keeps its name.
 - [x] Replace `build.ps1`/`build.sh` with premake commands: `premake5 gen|build|run|compdb|clean` (`premake/actions.lua`), DXC bootstrap in Lua (`premake/dxc.lua`); CI, hooks and docs updated.
-- [ ] Sanitizers in DEBUG only (they are currently in every config, including RELEASE).
-- [ ] Fix `Error::message`: it is a `string_view` filled from `std::format` temporaries, so it dangles. Own the string, or keep messages static.
+- [x] Sanitizers only outside RELEASE: ASan + UBSan compiled and linked in DEBUG and STAGING.
+- [x] Fix `Error::message`: now an owning `std::string` (`f97452d`).
 
 **Exit:** a fresh clone builds and runs with `premake5` commands only; no wrapper scripts left.
 

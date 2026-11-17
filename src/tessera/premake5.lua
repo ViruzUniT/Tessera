@@ -47,6 +47,11 @@ buildoptions({
 	"-Wunused-result",
 })
 
+-- Sanitizers in DEBUG and STAGING only. A static library has no link step, so only the compile
+-- flag goes here; the runtime is linked by the executable (see src/sandbox/premake5.lua).
+filter({ "configurations:DEBUG or STAGING", "toolset:gcc or toolset:clang" })
+buildoptions({ "-fsanitize=undefined,address" })
+
 filter("toolset:msc")
 warnings("Extra")
 buildoptions({
@@ -66,14 +71,12 @@ filter("configurations:DEBUG")
 defines({ "TESSERA_DEBUG", "TESSERA_DEV_UI" })
 runtime("Debug")
 symbols("on")
-linkoptions({ "-fsanitize=undefined,address" })
 
 filter("configurations:STAGING")
 defines({ "TESSERA_STAGING", "TESSERA_DEV_UI" })
 runtime("Release")
 optimize("Speed")
 symbols("on")
-linkoptions({ "-fsanitize=undefined,address" })
 
 filter("configurations:RELEASE")
 defines({ "TESSERA_RELEASE" })
