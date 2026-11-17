@@ -1,7 +1,7 @@
 -- Build workflow as premake commands:
 --   premake5 gen    [gmake|vs2022|vs2026]     default gmake
 --   premake5 build  [DEBUG|STAGING|RELEASE]   default DEBUG
---   premake5 run    [DEBUG|STAGING|RELEASE]   builds, then runs Sandbox
+--   premake5 run    [DEBUG|STAGING|RELEASE]   builds, then runs Sandbox; output also goes to run.log
 --   premake5 compdb [DEBUG|STAGING|RELEASE]   compile_commands.json for clangd (gmake only)
 --   premake5 clean                            removes build/, bin/, bin-int/, compile_commands.json
 -- Native generator actions (premake5 gmake, premake5 vs2022, ...) keep working.
@@ -16,16 +16,59 @@ if _ACTION and GENERATORS[_ACTION] then
 	dxc.ensure()
 end
 
+-- Only `premake5 run` opens this log (run.log in the repo root, overwritten each run, gitignored
+-- via *.log). While it's open, everything the action prints and every command's output is mirrored into it.
+local runLog = nil
+
+local function logLine(text)
+	if runLog then
+		runLog:write(text, "\n")
+		runLog:flush()
+	end
+end
+
+local function say(text)
+	print(text)
+	logLine(text)
+end
+
 local function fail(message)
 	io.stderr:write("error: " .. message .. "\n")
+	logLine("error: " .. message)
 	os.exit(1)
 end
 
--- Runs a shell command and returns its exit code.
+-- Turns the (ok, how, code) result of os.execute / pipe:close into an exit code.
+-- On a normal exit `how` is "exit" or "signal"; otherwise (e.g. the process was killed on Windows)
+-- Lua returns nil plus an error message and errno, which must count as a failure.
+local function exitCode(ok, how, code)
+	if how == "exit" or how == "signal" then
+		return code
+	end
+	return ok and 0 or 1
+end
+
+-- Runs a shell command and returns its exit code. With a run log open, stdout and stderr are
+-- read line by line, echoed to the console and written to the log.
 local function exec(command)
-	print("> " .. command)
-	local ok, _, code = os.execute(command)
-	return code or (ok and 0 or 1)
+	say("> " .. command)
+	if not runLog then
+		return exitCode(os.execute(command))
+	end
+
+	local line = command .. " 2>&1"
+	if WINDOWS then
+		-- cmd.exe strips the outer quotes, so commands that start with a quoted path survive.
+		line = '"' .. line .. '"'
+	end
+	local pipe = io.popen(line)
+	if not pipe then
+		fail("Could not start: " .. command)
+	end
+	for output in pipe:lines() do
+		say(output)
+	end
+	return exitCode(pipe:close())
 end
 
 -- Runs a shell command and exits with its code if it fails.
@@ -42,6 +85,7 @@ end
 
 local function configArg()
 	local config = (_ARGS[1] or "DEBUG"):upper()
+	logLine("config: " .. config)
 	if not CONFIGS[config] then
 		fail("Invalid configuration '" .. config .. "'. Use DEBUG, STAGING or RELEASE.")
 	end
@@ -105,8 +149,15 @@ newaction({
 
 newaction({
 	trigger = "run",
-	description = "Build, then run Sandbox: run [DEBUG|STAGING|RELEASE] (default DEBUG)",
+	description = "Build, then run Sandbox: run [DEBUG|STAGING|RELEASE] (default DEBUG); output also in run.log",
 	execute = function()
+		-- Open (and overwrite) the log first, so even an invalid argument ends up in it.
+		local logPath = path.join(ROOT, "run.log")
+		runLog = io.open(logPath, "w")
+		if not runLog then
+			fail("Could not open " .. logPath .. " for writing")
+		end
+		logLine(string.format("premake5 run %s - %s", table.concat(_ARGS, " "), os.date("%Y-%m-%d %H:%M:%S")))
 		local config = configArg()
 		build(config)
 		local exe = path.join(ROOT, "bin", config .. "-" .. os.host() .. "-x86_64", "Sandbox", "Sandbox")

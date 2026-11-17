@@ -45,7 +45,7 @@ No test framework yet; the vertical slice is the test.
 
 1. `premake5 build DEBUG` — no new warnings.
 2. `premake5 build RELEASE` when touching `TESSERA_DEV_UI` guards, config logic, or premake files.
-3. For runtime changes, tell the user what to check in `run DEBUG` / `run STAGING` (Claude cannot see the window).
+3. For runtime changes, tell the user what to check in `run DEBUG` / `run STAGING` (Claude cannot see the window). After the user runs it, read `run.log` (output of the last `premake5 run`) instead of asking them to paste output.
 4. On failure, paste the relevant compiler / debug-layer output.
 
 ## Style
