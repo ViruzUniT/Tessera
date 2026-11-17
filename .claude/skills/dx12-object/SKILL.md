@@ -31,5 +31,5 @@ Apply in addition to `.claude/rules/rhi_dx12.md`. When guiding (mentor mode), wa
 
 ## Done when
 
-- `./build.ps1 build DEBUG` is clean; `run DEBUG` shows no debug-layer errors, survives a window resize, and the live-object report on exit is clean.
+- `premake5 build DEBUG` is clean; `run DEBUG` shows no debug-layer errors, survives a window resize, and the live-object report on exit is clean.
 - `docs/status.md` updated if this completes a step.

@@ -68,7 +68,7 @@ local shaderProfiles = {
 }
 
 local shaderCommands = { "{MKDIR} %{cfg.targetdir}" }
-local dxc = path.getabsolute("../../.tools/dxc/1.9.2609/bin/x64/dxc.exe")
+local dxcExe = dxc.exe
 for _, shader in ipairs(os.matchfiles("../tessera/shaders/*.hlsl")) do
 	local filename = path.getbasename(shader)
 	local stage = path.getbasename(shader):match("%.([^.]+)$") or filename
@@ -80,7 +80,7 @@ for _, shader in ipairs(os.matchfiles("../tessera/shaders/*.hlsl")) do
 			shaderCommands,
 			string.format(
 				'"%s" -T %s %s-Fo "%s" "../src/tessera/shaders/%s.hlsl"',
-				dxc,
+				dxcExe,
 				profile,
 				entryPoint,
 				output,

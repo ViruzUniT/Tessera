@@ -7,13 +7,7 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 ## M0 — Foundation and build
 
 - [x] Rename the project to Tessera (namespace, include paths, macros, premake projects, docs). Sandbox keeps its name.
-- [ ] **Replace `build.ps1`/`build.sh` with premake commands.**
-  - Custom premake actions (`newaction`) in a `premake/` Lua file: `premake5 gen [gmake|vs2022|vs2026]`, `build`, `run`, `compdb`, `clean`, each with a `--config=DEBUG|STAGING|RELEASE` option.
-  - `build` runs `make -C build config=...` or `msbuild`; `run` builds, then starts Sandbox.
-  - DXC bootstrap moves to Lua: premake's built-in `http.download` and `zip.extract`, with SHA-256 checked through `certutil` (Windows) or `sha256sum`, since premake has no SHA-256 function.
-  - Port the `compdb` step, which needs `compiledb`.
-  - Update both CI workflows, `CLAUDE.md`, `docs/build.md` and the Claude hooks, which call `build.ps1`.
-  - Fallback if custom actions become awkward: a single `justfile` (cross-platform, small). Second choice: a top-level `Makefile`; it needs make on Windows, which you already use.
+- [x] Replace `build.ps1`/`build.sh` with premake commands: `premake5 gen|build|run|compdb|clean` (`premake/actions.lua`), DXC bootstrap in Lua (`premake/dxc.lua`); CI, hooks and docs updated.
 - [ ] Sanitizers in DEBUG only (they are currently in every config, including RELEASE).
 - [ ] Fix `Error::message`: it is a `string_view` filled from `std::format` temporaries, so it dangles. Own the string, or keep messages static.
 

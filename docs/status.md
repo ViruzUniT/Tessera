@@ -6,16 +6,15 @@ Where the project stands now. Milestones: `docs/roadmap.md`. Update this file wh
 
 ### Next steps
 
-1. Replace `build.ps1`/`build.sh` with premake custom actions (see roadmap M0 for scope and fallback).
-2. Sanitizers in DEBUG only.
-3. Fix `Error::message` dangling `string_view`.
+1. Sanitizers in DEBUG only.
+2. Fix `Error::message` dangling `string_view`.
 
 ## Current state
 
 - Win32 window; DX12 device, queue, swapchain, fence; one hard-coded triangle.
 - ImGui (docking, multi-viewport) with an example panel, DX12 binding in `renderer/imgui.*`.
 - Offline shader build: HLSL → DXIL with pinned DXC (`.tools/dxc/`, SHA-256 checked), currently driven by Sandbox's premake file.
-- `build.ps1` handles gen/build/run/compdb/clean; `build.sh` is an empty placeholder.
+- Build workflow is premake-only: `premake5 gen|build|run|compdb|clean` (`premake/actions.lua`), DXC bootstrap in `premake/dxc.lua`.
 - CI builds DEBUG and RELEASE on pull requests.
 - `renderer/renderer.cpp` and `rhi_dx12/swapchain.*` are empty; `Window` owns RHI, ImGui and the frame loop; one frame in flight.
 

@@ -22,7 +22,7 @@ process.stdin.on("end", () => {
   const file = ti.file_path;
   if (!file) process.exit(0);
 
-  const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  const root = path.resolve(__dirname, "..", ".."); // repo root, independent of CLAUDE_PROJECT_DIR
   const rel = path.relative(root, path.resolve(file)).replace(/\\/g, "/");
   if (!SHARED.test(rel)) process.exit(0);
 

@@ -8,4 +8,5 @@ Format: `- [area] what's suboptimal → better approach (why it matters). Noted 
 
 - [core] `Error` codes such as `InvalidArgumentIGuess` and `CouldBeAProblem` are vague, and `operator bool` logs as a side effect → give each code one clear meaning, and keep logging out of the bool conversion (users of the lib need to know exactly what failed, and a check shouldn't print). Noted 2026-11-17.
 - [rhi_dx12] `RHI::Update()` keeps its result in a `static Error` → use a local (a static is shared across instances and threads, which breaks with multi-window). Noted 2026-11-17.
+- [build] `premake5 build` falls back to a hard-coded `C:\mingw64\bin` when `g++` isn't on `PATH` (carried over from `build.ps1`) → detect the toolchain or document it as a requirement (other machines and CI won't have that path). Noted 2026-11-17.
 - [rhi_dx12] The SRV heap uses `ExampleDescriptorHeapAllocator`, copied from the ImGui sample → replace it with an engine descriptor allocator when the descriptor model is designed in M5 (the sample is fixed-size and ImGui-specific). Noted 2026-11-17.

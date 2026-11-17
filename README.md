@@ -10,9 +10,8 @@ Status: early. DX12 renders a triangle with ImGui in one window. See [status](do
 ## Quick start (Windows)
 
 ```powershell
-git submodule update --init --recursive
-./build.ps1 gen
-./build.ps1 run          # DEBUG by default
+premake5 gen          # inits submodules, downloads DXC, generates gmake files
+premake5 run          # DEBUG by default
 ```
 
 Requirements and all commands: [docs/build.md](docs/build.md).

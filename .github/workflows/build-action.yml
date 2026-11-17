@@ -45,12 +45,12 @@ jobs:
       - name: Generate makefiles
         shell: pwsh
         run: |
-          .\build.ps1 gen
+          premake5 gen
 
       - name: Build the project
         shell: pwsh
         run: |
-          .\build.ps1 build RELEASE
+          premake5 build RELEASE
 
       - name: Publish artifacts
         uses: actions/upload-artifact@v4

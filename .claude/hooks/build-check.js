@@ -17,7 +17,7 @@ process.stdin.on("data", (c) => (raw += c));
 process.stdin.on("end", () => {
   let input = {};
   try { input = JSON.parse(raw); } catch {}
-  const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  const root = path.resolve(__dirname, "..", ".."); // repo root, independent of CLAUDE_PROJECT_DIR
   const marker = path.join(os.tmpdir(), `tessera-claude-build-${input.session_id || "unknown"}.json`);
   const load = () => { try { return JSON.parse(fs.readFileSync(marker, "utf8")); } catch { return null; } };
   const save = (s) => fs.writeFileSync(marker, JSON.stringify(s));
@@ -42,10 +42,9 @@ process.stdin.on("end", () => {
   const configs = ["DEBUG"];
   if (s.files.some((f) => RELEASE_TRIGGER.test(f))) configs.push("RELEASE");
 
-  const shell = spawnSync("pwsh", ["-v"], { stdio: "ignore" }).error ? "powershell" : "pwsh";
   const touched = s.files.join(", ");
   for (const cfg of configs) {
-    const r = spawnSync(shell, ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "build.ps1", "build", cfg],
+    const r = spawnSync("premake5", ["build", cfg],
       { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
     const out = `${r.stdout || ""}\n${r.stderr || ""}`;
     const lines = out.split(/\r?\n/);
@@ -63,7 +62,7 @@ process.stdin.on("end", () => {
       save(s);
       const shown = (errors.length ? errors : lines.slice(-60)).slice(0, 60).join("\n");
       process.stderr.write(
-        `./build.ps1 build ${cfg} failed. Files you edited this session: ${touched}.\n` +
+        `premake5 build ${cfg} failed. Files you edited this session: ${touched}.\n` +
         `Fix errors caused by your edits. If the errors are in files you did not touch ` +
         `(the user's work in progress), do not fix them: report them to the user and stop.\n\n${shown}\n`);
       process.exit(2);
@@ -75,7 +74,7 @@ process.stdin.on("end", () => {
       s.attempts += 1;
       save(s);
       process.stderr.write(
-        `./build.ps1 build ${cfg} succeeded with warnings. Files you edited this session: ${touched}.\n` +
+        `premake5 build ${cfg} succeeded with warnings. Files you edited this session: ${touched}.\n` +
         `Fix warnings in lines you changed; mention any others to the user without fixing them.\n\n` +
         warnings.slice(0, 40).join("\n") + "\n");
       process.exit(2);

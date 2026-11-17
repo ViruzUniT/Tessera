@@ -33,8 +33,8 @@ Tessera: C++23 engine. Code-only library first (+ optional ImGui `dev_ui`, Sandb
 ## Commands (Windows)
 
 ```powershell
-./build.ps1 build [DEBUG|STAGING|RELEASE]   # default DEBUG
-./build.ps1 run   [DEBUG|STAGING|RELEASE]   # builds, then runs Sandbox
+premake5 build [DEBUG|STAGING|RELEASE]   # default DEBUG
+premake5 run   [DEBUG|STAGING|RELEASE]   # builds, then runs Sandbox
 ```
 
 Everything else (`gen`, `compdb`, `clean`): `docs/build.md`.
@@ -43,8 +43,8 @@ Everything else (`gen`, `compdb`, `clean`): `docs/build.md`.
 
 No test framework yet; the vertical slice is the test.
 
-1. `./build.ps1 build DEBUG` — no new warnings.
-2. `./build.ps1 build RELEASE` when touching `TESSERA_DEV_UI` guards, config logic, or premake files.
+1. `premake5 build DEBUG` — no new warnings.
+2. `premake5 build RELEASE` when touching `TESSERA_DEV_UI` guards, config logic, or premake files.
 3. For runtime changes, tell the user what to check in `run DEBUG` / `run STAGING` (Claude cannot see the window).
 4. On failure, paste the relevant compiler / debug-layer output.
 
