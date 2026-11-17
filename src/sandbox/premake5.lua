@@ -40,7 +40,6 @@ buildoptions({
 	"-Werror",
 	"-Wunused-result",
 })
-linkoptions({ "-fsanitize=undefined,address" })
 
 filter("toolset:msc")
 warnings("Extra")
@@ -115,6 +114,7 @@ links({
 	"dxgi",
 	"dxguid",
 })
+linkoptions({ "-fsanitize=undefined,address" })
 
 filter("configurations:STAGING")
 defines({ "TESSERA_STAGING", "TESSERA_DEV_UI" })
@@ -125,6 +125,7 @@ links({
 	"dxgi",
 	"dxguid",
 })
+linkoptions({ "-fsanitize=undefined,address" })
 
 filter("configurations:RELEASE")
 defines({ "TESSERA_RELEASE" })

@@ -45,7 +45,6 @@ buildoptions({
 	"-Wextra",
 	"-Werror",
 	"-Wunused-result",
-	"-fsanitize=undefined,address",
 })
 
 filter("toolset:msc")
@@ -67,12 +66,14 @@ filter("configurations:DEBUG")
 defines({ "TESSERA_DEBUG", "TESSERA_DEV_UI" })
 runtime("Debug")
 symbols("on")
+linkoptions({ "-fsanitize=undefined,address" })
 
 filter("configurations:STAGING")
 defines({ "TESSERA_STAGING", "TESSERA_DEV_UI" })
 runtime("Release")
 optimize("Speed")
 symbols("on")
+linkoptions({ "-fsanitize=undefined,address" })
 
 filter("configurations:RELEASE")
 defines({ "TESSERA_RELEASE" })
