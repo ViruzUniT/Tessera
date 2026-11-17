@@ -21,12 +21,12 @@ files({
 
 includedirs({
 	"../../vendor/imgui",
-	"../ngin/include",
+	"../tessera/include",
 	".",
 })
 
 links({
-	"Ngin",
+	"Tessera",
 })
 
 filter("toolset:gcc or toolset:clang")
@@ -69,7 +69,7 @@ local shaderProfiles = {
 
 local shaderCommands = { "{MKDIR} %{cfg.targetdir}" }
 local dxc = path.getabsolute("../../.tools/dxc/1.9.2609/bin/x64/dxc.exe")
-for _, shader in ipairs(os.matchfiles("../ngin/shaders/*.hlsl")) do
+for _, shader in ipairs(os.matchfiles("../tessera/shaders/*.hlsl")) do
 	local filename = path.getbasename(shader)
 	local stage = path.getbasename(shader):match("%.([^.]+)$") or filename
 	local profile = filename:lower() == "rootsignature" and "rootsig_1_1" or shaderProfiles[stage:lower()]
@@ -79,7 +79,7 @@ for _, shader in ipairs(os.matchfiles("../ngin/shaders/*.hlsl")) do
 		table.insert(
 			shaderCommands,
 			string.format(
-				'"%s" -T %s %s-Fo "%s" "../src/ngin/shaders/%s.hlsl"',
+				'"%s" -T %s %s-Fo "%s" "../src/tessera/shaders/%s.hlsl"',
 				dxc,
 				profile,
 				entryPoint,
@@ -107,7 +107,7 @@ filter("system:windows")
 systemversion("latest")
 
 filter("configurations:DEBUG")
-defines({ "NGIN_DEBUG", "NGIN_DEV_UI" })
+defines({ "TESSERA_DEBUG", "TESSERA_DEV_UI" })
 runtime("Debug")
 symbols("on")
 filter("system:windows")
@@ -117,7 +117,7 @@ links({
 })
 
 filter("configurations:STAGING")
-defines({ "NGIN_STAGING", "NGIN_DEV_UI" })
+defines({ "TESSERA_STAGING", "TESSERA_DEV_UI" })
 runtime("Release")
 optimize("Speed")
 symbols("on")
@@ -127,7 +127,7 @@ links({
 })
 
 filter("configurations:RELEASE")
-defines({ "NGIN_RELEASE" })
+defines({ "TESSERA_RELEASE" })
 runtime("Release")
 optimize("Speed")
 symbols("off")

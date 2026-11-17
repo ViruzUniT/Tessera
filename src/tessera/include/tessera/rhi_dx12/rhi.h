@@ -1,0 +1,112 @@
+#pragma once
+
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <tessera/pch.h>
+#include <tessera/rhi/shader.h>
+#include <tessera/rhi_dx12/fence.h>
+
+#include <array>
+
+#include "tessera/rhi_dx12/descriptorAllocator.h"
+
+namespace Tessera {
+class RHI : public NonCopyableNonMovable {
+ public:
+  RHI() = delete;
+  ~RHI() {
+    logTrace("Destructing RHI");
+    fence.reset();
+    ReleaseBuffers();
+  }
+  static Error Create(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen,
+    Ref<RHI>& rhi);
+
+ public:
+  Error Update();
+  Error ExecuteCommandList();
+  Error Present();
+  Error BeginFrame();
+  Error EndFrame();
+  Error Resize(uint16_t width, uint16_t height);
+
+  inline void SetPipelineState() {
+    cmdList->SetPipelineState(pipelineState);
+    cmdList->SetGraphicsRootSignature(rootSignature);
+  }
+  inline void ConfigureInputAssembler() {
+    cmdList->IASetVertexBuffers(0, 1, &vbv);
+    cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  }
+  void ConfigureRasterizer(Vec2Rounded windowDimensions);
+  // currently not working cuz of blend settings
+  inline void ConfigureOutputMerger() {
+    f32 bf[] = {0.1f, 0.1f, 0.1f, 0.1f};
+    cmdList->OMSetBlendFactor(bf);
+  }
+
+  void Draw(Vec2Rounded windowDimensions);
+
+  Error GetBuffers();
+
+  inline void ReleaseBuffers() {
+    for (size_t i = 0; i < FRAME_COUNT; i++) {
+      buffers[i].reset();
+    }
+  }
+
+ public:
+  // currently only used for imgui
+  inline ID3D12Device10* getDevice() const { return device.get(); }
+  inline ID3D12CommandQueue* getCmdQueue() const { return cmdQueue.get(); }
+  inline ID3D12DescriptorHeap* getRtvHeap() const { return rtvHeap.get(); }
+  inline ID3D12DescriptorHeap* getSrvDescriptorHeap() const { return srvDescriptorHeap.get(); }
+  inline ID3D12GraphicsCommandList7* getCmdList() const { return cmdList.get(); }
+  inline ExampleDescriptorHeapAllocator* getSrvHeap() const { return srvHeap.get(); }
+  static constexpr DXGI_FORMAT COLOR_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+ private:
+  RHI(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen, Error& err);
+
+ private:
+  static constexpr uint32_t SWAPCHAIN_FLAGS =
+    DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+
+  // Temp
+  constexpr static Vertex verticies[] = {
+    // T1
+    {-1.f, -1.f}, {0.f, 1.f}, {1.f, -1.f}
+  };
+
+ private:
+  ComScope<ID3D12Device10> device;
+  ComScope<ID3D12CommandQueue> cmdQueue;
+  Scope<Fence> fence;
+  ComScope<ID3D12CommandAllocator> cmdAlloc;
+  ComScope<ID3D12GraphicsCommandList7> cmdList;
+  ComScope<IDXGIFactory7> factory;
+  ComScope<IDXGISwapChain4> swapchain;
+  ComScope<ID3D12DescriptorHeap> rtvHeap;
+  ComScope<ID3D12DescriptorHeap> srvDescriptorHeap;
+  Array<D3D12_CPU_DESCRIPTOR_HANDLE, FRAME_COUNT> rtvHandles;
+  ComScope<ID3D12Resource2> uploadBuffer, vertexBuffer;
+  ComScope<ID3D12RootSignature> rootSignature;
+  ComScope<ID3D12PipelineState> pipelineState;
+  D3D12_VERTEX_BUFFER_VIEW vbv;
+  Array<ComScope<ID3D12Resource2>, FRAME_COUNT> buffers;
+  Scope<ExampleDescriptorHeapAllocator> srvHeap;
+  uint8_t currentBuffer = 0;
+  bool& fullscreen;
+
+ private:
+  // Creation of the attributes
+  Error createCmdQueue();
+  Error createFence();
+  Error createCommandAllocator();
+  Error CreateCommandList();
+  Error CreateSwapChain(HWND hwnd, Vec2Rounded windowDimensions);
+  Error CreateRtvHeap();
+  Error CreateUploadAndVertexBuffer();
+  Error CreateSrvHeap();
+};
+}  // namespace Tessera

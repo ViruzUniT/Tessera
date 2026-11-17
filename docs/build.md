@@ -1,96 +1,44 @@
-# Build Workflow
+# Build
 
-The project uses Premake5 for project generation and wrapper scripts for common commands.
+Premake5 generates the project files, and `build.ps1` wraps the common commands. The wrapper is going away in favour of premake commands (roadmap M0); update this file when that happens.
 
-## Build Configurations
+## Requirements (Windows)
 
-Use uppercase configuration names:
+- Windows 10/11 with the Windows SDK (DX12 headers and libraries).
+- Clang (llvm-mingw) as the primary compiler; keep MSVC 2022 compatible. No compiler-specific behaviour unless it's isolated and documented.
+- GNU Make for the default `gmake` generator.
+- `premake5` (5.0.0-beta8) on `PATH`.
+- `compiledb` (`pip install compiledb`) for the clangd database.
+- Submodules: `git submodule update --init --recursive` (Dear ImGui in `vendor/imgui`).
 
-```txt
-DEBUG
-STAGING
-RELEASE
-```
-
-`DEBUG` is the default configuration for `build` and `run` when no configuration argument is passed.
-
-`STAGING` should use release-like optimization while keeping assertions, diagnostics, validation, and ImGui dev UI enabled.
-
-`RELEASE` should be optimized and must not compile ImGui or developer-only UI code.
-
-## Toolchains
-
-Clang is the primary compiler.
-
-MSVC 2022 compatibility should be maintained for Windows and DirectX 12 development. The project should not rely on compiler-specific behavior unless it is isolated and documented.
-
-## Premake
-
-Premake5 should generate project files into:
-
-```txt
-build/
-```
-
-On Windows, `build.ps1 gen` and `build.ps1 build` bootstrap pinned DXC into `.tools/dxc/` when it is missing. The download is checked against its SHA-256 before extraction. Shader build commands use this cached compiler, so DXC does not need to be installed globally or added to `PATH`.
-
-Output directories should be:
-
-```txt
-bin/
-bin-int/
-```
-
-The first supported generated target is a Visual Studio solution for DX12 development on Windows.
-
-## Wrapper Commands
-
-Windows:
-
-```sh
-./build.ps1 gen
-./build.ps1 build [DEBUG|STAGING|RELEASE]
-./build.ps1 run [DEBUG|STAGING|RELEASE]
-./build.ps1 clean
-```
-
-Linux/macOS-style shell:
-
-```sh
-./build.sh gen
-./build.sh build [DEBUG|STAGING|RELEASE]
-./build.sh run [DEBUG|STAGING|RELEASE]
-./build.sh clean
-```
-
-Default behavior:
-
-- `build` without a config builds `DEBUG`.
-- `run` without a config builds and runs `DEBUG`.
-- `clean` removes generated project files, binaries, and intermediate output.
-- `gen` runs Premake generation.
-
-`build.sh` is part of the planned cross-platform workflow, but DX12 build and run support is Windows-only until Vulkan exists.
-
-## Expected Clean Targets
-
-The clean command should remove generated and compiled files:
-
-```txt
-build/
-bin/
-bin-int/
-```
-
-It should not remove source code, dependencies, documentation, or user assets.
-
-## clangd compile database
-
-After generating GNU Make files, create a configuration-specific compilation database without rebuilding the project:
+## Commands
 
 ```powershell
-./build.ps1 gen gmake
-./build.ps1 compdb DEBUG
+./build.ps1 gen [gmake|vs2022|vs2026]        # default gmake
+./build.ps1 build [DEBUG|STAGING|RELEASE]    # default DEBUG
+./build.ps1 run [DEBUG|STAGING|RELEASE]      # builds, then runs Sandbox
+./build.ps1 compdb [DEBUG|STAGING|RELEASE]   # compile_commands.json for clangd
+./build.ps1 clean                            # removes build/, bin/, bin-int/
 ```
 
-The command writes `compile_commands.json` at the repository root. Use `STAGING` or `RELEASE` for those configuration defines. It requires the `compiledb` Python package (`pip install compiledb`).
+`build.sh` is an empty placeholder.
+
+## Configurations
+
+Configurations are `DEBUG`, `STAGING` and `RELEASE`; what each one enables is in `docs/architecture.md`. The defines are `TESSERA_DEBUG`/`TESSERA_STAGING`/`TESSERA_RELEASE`, plus `TESSERA_DEV_UI` in DEBUG and STAGING.
+
+## Outputs
+
+- `build/`: generated projects (`Tessera.make`, `Sandbox.make`, `Makefile` or `.sln`).
+- `bin/<CONFIG>-windows-x86_64/<Project>/` and `bin-int/...`: binaries and intermediates.
+- `compile_commands.json` at the repo root, generated from a GNU Make dry run.
+
+None of these are committed.
+
+## Shaders and DXC
+
+`gen` and `build` download the pinned DXC into `.tools/dxc/` when it's missing, and check the archive's SHA-256 before extracting it. Shader build steps use that copy, so DXC doesn't need to be installed or on `PATH`. HLSL lives in `src/tessera/shaders/` and is compiled to DXIL during the build; it is currently driven by Sandbox's premake file, and moves to the engine in M2.
+
+## CI
+
+`.github/workflows/` builds DEBUG and RELEASE with Clang + Make on pull requests, through `build.ps1`.

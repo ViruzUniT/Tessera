@@ -98,7 +98,7 @@ elseif($operation -eq "compdb") {
     exit 1
   }
 
-  if(-not (Test-Path "build/Ngin.make") -or -not (Test-Path "build/Sandbox.make")) {
+  if(-not (Test-Path "build/Tessera.make") -or -not (Test-Path "build/Sandbox.make")) {
     Write-Host "Generated GNU Make files not found. Run build.ps1 gen gmake first" -ForegroundColor Red
     exit 1
   }
@@ -108,7 +108,7 @@ elseif($operation -eq "compdb") {
   $log = [IO.Path]::GetTempFileName()
   Push-Location "build"
   try {
-    & make -f Ngin.make config=$makeConfig -n -B > $log
+    & make -f Tessera.make config=$makeConfig -n -B > $log
     if($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     & make -f Sandbox.make config=$makeConfig -n -B >> $log
     if($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -126,7 +126,7 @@ elseif($operation -eq "compdb") {
   foreach($entry in $database) {
     for($index = 0; $index -lt ($entry.arguments.Count - 1); $index++) {
       if(($entry.arguments[$index] -eq "-include") -and ($entry.arguments[$index + 1] -match "bin-int/.*/pch\.h$")) {
-        $entry.arguments[$index + 1] = "../src/ngin/include/ngin/pch.h"
+        $entry.arguments[$index + 1] = "../src/tessera/include/tessera/pch.h"
       }
     }
   }
@@ -147,7 +147,7 @@ elseif($operation -eq "build") {
   }
 
   $makeConfig = $type.ToLower()
-  $generated = (Test-Path "build/Makefile") -or (Test-Path "build/Ngin.sln")
+  $generated = (Test-Path "build/Makefile") -or (Test-Path "build/Tessera.sln")
   $built = $false
 
   if((Test-Path "C:/mingw64/bin/g++.exe") -and (-not (Get-Command g++ -ErrorAction SilentlyContinue))) {
@@ -165,13 +165,13 @@ elseif($operation -eq "build") {
     }
   }
 
-  if((-not $built) -and (Test-Path "build/Ngin.sln")) {
+  if((-not $built) -and (Test-Path "build/Tessera.sln")) {
     if(-not (Get-Command msbuild -ErrorAction SilentlyContinue)) {
       Write-Host "make or msbuild not found on PATH" -ForegroundColor Red
       exit 1
     }
 
-    msbuild "build/Ngin.sln" /p:Configuration=$type /p:Platform=x64
+    msbuild "build/Tessera.sln" /p:Configuration=$type /p:Platform=x64
     $built = $true
   }
 
