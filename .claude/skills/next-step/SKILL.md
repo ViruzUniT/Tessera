@@ -9,7 +9,7 @@ Plan one step of Tessera work. Do not edit files in this skill.
 
 1. Read `docs/status.md`. Pick the step in `$ARGUMENTS`; if empty, the first item under "Next steps". Say which step you picked.
 2. Read only the docs and code the step touches (`docs/architecture.md` only if it crosses module boundaries or RHI contracts; `docs/roadmap.md` for the milestone's exit criteria).
-3. Check "Known issues" in `docs/status.md` for anything that blocks or overlaps the step.
+3. Check "Known issues" in `docs/status.md` for anything that blocks or overlaps the step, and `docs/improvements.md` for open entries in the same area. Mention at most 3 relevant ones, one line each, as optional ("while you're there, you could…").
 4. Output, briefly:
    - **Goal** — one sentence; what is observably different when done.
    - **Changes** — per file: what changes and why. Mark new files.

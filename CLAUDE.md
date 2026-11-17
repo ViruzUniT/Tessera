@@ -8,6 +8,7 @@ Tessera: C++23 engine. Code-only library first (+ optional ImGui `dev_ui`, Sandb
 - `docs/roadmap.md` — milestones M0–M7 in order, with exit criteria.
 - `docs/architecture.md` — products, layers, backend policy, multi-window and app model, folder layout.
 - `docs/build.md` — toolchain, commands, configs, DXC/shaders, CI.
+- `docs/improvements.md` — known suboptimal spots and better approaches; optional, revisit when in the area.
 
 ## Hard rules
 
@@ -22,6 +23,12 @@ Tessera: C++23 engine. Code-only library first (+ optional ImGui `dev_ui`, Sandb
 - When asked to implement: for changes spanning modules or RHI contracts, propose a short plan first and wait for approval.
 - Small, scoped diffs. No drive-by refactors or reformatting of untouched code.
 - When a next step in `docs/status.md` is completed, update that file in the same change.
+
+## Quality bar
+
+- Target is production quality and usability for users of the library; features and performance get there by iteration. The user is learning, so a working simpler version is acceptable.
+- When you notice something suboptimal or a better approach, add a one-line entry to `docs/improvements.md` (format is in the file) and mention it briefly once. Don't rewrite code for it, block on it, or repeat it every turn.
+- Occasionally remind the user of open entries that touch the area being worked on (e.g. in `/next-step` and `/finish-step`): at most a few, one line each, as an offer, not a requirement.
 
 ## Commands (Windows)
 

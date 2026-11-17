@@ -16,6 +16,8 @@ Milestones: `docs/roadmap.md`.
 
 ## Goals
 
+- **Production quality for library users.** The public API, its documentation, error reporting and code quality aim at a level other people could ship with: clear ownership, no surprising behaviour, failures that say what went wrong, nothing undefined.
+- **Production-grade features and performance, reached by iterating.** That's the target, not the bar for every step. A simpler version that works is fine first; known shortcomings and better approaches go in `docs/improvements.md` and get revisited, not forced in up front.
 - **Backend-independent user code.** Apps include only Tessera's public headers and never see DX12/Vulkan types, `windows.h` or ImGui backends. The backend is a startup option.
 - **Honest feature differences.** Where one backend lacks a feature, the API reports it through a capability query (`device.Supports(Feature::...)`). It doesn't emulate the feature silently or hide it.
 - **Multi-window by design.** One device, any number of windows, each with its own swapchain. ImGui multi-viewport windows use the same path.

@@ -18,5 +18,6 @@ Wrap up the current working-tree change. Do not commit unless the user asks.
    - New DX12 objects follow `.claude/rules/rhi_dx12.md` (ownership, fence waits before release, no per-frame creation).
    List violations with `file:line`; don't silently fix them.
 4. Update `docs/status.md`: move the finished step (`$ARGUMENTS`, or the one the diff completes) to "Done" in one line; add any new known issue or decision you found. Show the user the change.
-5. Tell the user what to check in `./build.ps1 run DEBUG` (and STAGING if relevant), including the debug-layer live-object report on exit.
-6. Draft a conventional commit subject (and a short body if needed), e.g. `rhi: add per-frame command allocators`.
+5. Improvements: add an entry to `docs/improvements.md` for anything in the diff that works but isn't production quality yet (don't fix it). Remove entries the diff resolved. List the added/removed entries in one line each.
+6. Tell the user what to check in `./build.ps1 run DEBUG` (and STAGING if relevant), including the debug-layer live-object report on exit.
+7. Draft a conventional commit subject (and a short body if needed), e.g. `rhi: add per-frame command allocators`.

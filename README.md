@@ -23,3 +23,4 @@ Requirements and all commands: [docs/build.md](docs/build.md).
 - [Roadmap](docs/roadmap.md): milestones in order.
 - [Status](docs/status.md): current state, next steps, decisions, known issues.
 - [Build](docs/build.md): toolchain, commands, configurations, shaders, CI.
+- [Improvements](docs/improvements.md): known shortcomings and better approaches, revisited over time.
