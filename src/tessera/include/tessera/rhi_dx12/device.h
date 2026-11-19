@@ -1,34 +1,31 @@
 #pragma once
 
-#include <d3d12.h>
-#include <dxgi1_6.h>
+#include <tessera/core/assert.h>
 #include <tessera/pch.h>
 #include <tessera/rhi/shader.h>
 #include <tessera/rhi_dx12/fence.h>
-
-#include <array>
+#include <tessera/rhi_dx12/swapchain.h>
 
 #include "tessera/rhi_dx12/descriptorAllocator.h"
 
 namespace Tessera {
-class RHI : public NonCopyableNonMovable {
+class Device : public NonCopyableNonMovable {
  public:
-  RHI() = delete;
-  ~RHI() {
-    logTrace("Destructing RHI");
+  Device() = delete;
+  ~Device() {
+    swapchains.clear();
+    TESSERA_ASSERT_MSG(swapchains.size() == 0, "Error not all swapchains got deleted");
+    logTrace("Destructing Device");
     fence.reset();
-    ReleaseBuffers();
   }
-  static Error Create(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen,
-    Ref<RHI>& rhi);
+  static Error Create(Ref<Device>& device);
+  Error CreateSwapchain(bool fullscreen, Vec2Rounded dimensions, HWND hwnd);
 
  public:
-  Error Update();
+  Error Submit();
   Error ExecuteCommandList();
-  Error Present();
-  Error BeginFrame();
-  Error EndFrame();
-  Error Resize(uint16_t width, uint16_t height);
+  Error BeginFrame(Swapchain* swapchain);
+  Error EndFrame(Swapchain* swapchain);
 
   inline void SetPipelineState() {
     cmdList->SetPipelineState(pipelineState);
@@ -47,31 +44,21 @@ class RHI : public NonCopyableNonMovable {
 
   void Draw(Vec2Rounded windowDimensions);
 
-  Error GetBuffers();
-
-  inline void ReleaseBuffers() {
-    for (size_t i = 0; i < FRAME_COUNT; i++) {
-      buffers[i].reset();
-    }
-  }
-
  public:
   // currently only used for imgui
   inline ID3D12Device10* getDevice() const { return device.get(); }
+  inline size_t getSwapchainSize() const { return swapchains.size(); }
+  inline Swapchain* getSwapchain(const size_t i = 0) { return swapchains.at(i).get(); }
+  inline IDXGIFactory7* getFactory() const { return factory; }
   inline ID3D12CommandQueue* getCmdQueue() const { return cmdQueue.get(); }
-  inline ID3D12DescriptorHeap* getRtvHeap() const { return rtvHeap.get(); }
   inline ID3D12DescriptorHeap* getSrvDescriptorHeap() const { return srvDescriptorHeap.get(); }
   inline ID3D12GraphicsCommandList7* getCmdList() const { return cmdList.get(); }
   inline ExampleDescriptorHeapAllocator* getSrvHeap() const { return srvHeap.get(); }
-  static constexpr DXGI_FORMAT COLOR_FORMAT = DXGI_FORMAT_R8G8B8A8_UNORM;
 
  private:
-  RHI(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen, Error& err);
+  Device(Error& err);
 
  private:
-  static constexpr uint32_t SWAPCHAIN_FLAGS =
-    DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-
   // Temp
   constexpr static Vertex verticies[] = {
     // T1
@@ -85,28 +72,21 @@ class RHI : public NonCopyableNonMovable {
   ComScope<ID3D12CommandAllocator> cmdAlloc;
   ComScope<ID3D12GraphicsCommandList7> cmdList;
   ComScope<IDXGIFactory7> factory;
-  ComScope<IDXGISwapChain4> swapchain;
-  ComScope<ID3D12DescriptorHeap> rtvHeap;
   ComScope<ID3D12DescriptorHeap> srvDescriptorHeap;
-  Array<D3D12_CPU_DESCRIPTOR_HANDLE, FRAME_COUNT> rtvHandles;
   ComScope<ID3D12Resource2> uploadBuffer, vertexBuffer;
   ComScope<ID3D12RootSignature> rootSignature;
   ComScope<ID3D12PipelineState> pipelineState;
   D3D12_VERTEX_BUFFER_VIEW vbv;
-  Array<ComScope<ID3D12Resource2>, FRAME_COUNT> buffers;
   Scope<ExampleDescriptorHeapAllocator> srvHeap;
-  uint8_t currentBuffer = 0;
-  bool& fullscreen;
+  List<Ref<Swapchain>> swapchains;
 
  private:
   // Creation of the attributes
   Error createCmdQueue();
   Error createFence();
   Error createCommandAllocator();
-  Error CreateCommandList();
-  Error CreateSwapChain(HWND hwnd, Vec2Rounded windowDimensions);
-  Error CreateRtvHeap();
-  Error CreateUploadAndVertexBuffer();
-  Error CreateSrvHeap();
+  Error createCommandList();
+  Error createUploadAndVertexBuffer();
+  Error createSrvHeap();
 };
 }  // namespace Tessera

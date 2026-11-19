@@ -12,8 +12,6 @@
 #include <type_traits>
 #include <utility>
 
-static constexpr uint8_t FRAME_COUNT = 2;
-
 #if defined(TESSERA_PLATFORM_WINDOWS)
 #include <backends/imgui_impl_dx12.h>
 #include <backends/imgui_impl_win32.h>

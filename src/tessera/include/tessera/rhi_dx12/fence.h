@@ -1,8 +1,6 @@
 #pragma once
 
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <tessera/rhi_dx12/rhi.h>
+#include <tessera/pch.h>
 
 namespace Tessera {
 struct Fence : NonCopyable {
@@ -28,16 +26,12 @@ struct Fence : NonCopyable {
 
   ~Fence() {
     logTrace("Destructing Fence");
-    Flush(FRAME_COUNT);
+    Flush();
     if (fenceEvent)
       CloseHandle(fenceEvent);
   }
 
-  inline void Flush(size_t count) {
-    for (size_t i = 0; i < count; i++) {
-      SignalAndWait();
-    }
-  }
+  inline void Flush() { SignalAndWait(); }
   uint64_t fenceValue = 0;
 
   inline ID3D12Fence1* getFence() const noexcept { return fence.get(); }

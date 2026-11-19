@@ -1,20 +1,27 @@
-#include <tessera/rhi_dx12/rhi.h>
+#include <tessera/rhi_dx12/device.h>
 
 namespace Tessera {
-Error RHI::Create(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen,
-  Ref<RHI>& rhi) {
+Error Device::Create(Ref<Device>& device) {
   Error err;
-  RHI* tempRhi = new RHI(hwnd, windowDimensions, fullscreen, err);
+  Device* tempDevice = new Device(err);
   if (err) {
-    delete tempRhi;
+    delete tempDevice;
     return err;
   }
-  rhi.reset(tempRhi);
+  device.reset(tempDevice);
   return Error{};
 }
+Error Device::CreateSwapchain(bool fullscreen, Vec2Rounded dimensions, HWND hwnd) {
+  Ref<Swapchain> swapchain;
+  Error err = Swapchain::Create(swapchain, fullscreen, dimensions, hwnd, fence.get(), getDevice(),
+    getFactory(), getCmdQueue());
+  if (err)
+    return err;
+  swapchains.push_back(swapchain);
+  return err;
+}
 
-RHI::RHI(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen, Error& err)
-    : fullscreen(fullscreen) {
+Device::Device(Error& err) {
   logTrace("Creating Device");
   HRESULT hr = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_12_1, IID_PPV_ARGS(&device));
   if (FAILED(hr)) {
@@ -41,7 +48,7 @@ RHI::RHI(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen, 
   }
 
   logTrace("Creating Cmd List");
-  err = CreateCommandList();
+  err = createCommandList();
   if (err)
     return;
 
@@ -52,41 +59,26 @@ RHI::RHI(const HWND hwnd, const Vec2Rounded windowDimensions, bool& fullscreen, 
     return;
   }
 
-  logTrace("Creating Swap chain");
-  err = CreateSwapChain(hwnd, windowDimensions);
-  if (err)
-    return;
-
-  logTrace("Creating Rtv Heap");
-  err = CreateRtvHeap();
-  if (err)
-    return;
-
   logTrace("Creating Upload and Vertex Buffers");
-  err = CreateUploadAndVertexBuffer();
+  err = createUploadAndVertexBuffer();
   if (err)
     return;
   // Mby need to add wait for buffers but i think i did that
 
   logTrace("Creating srv heap");
-  err = CreateSrvHeap();
+  err = createSrvHeap();
 }
-Error RHI::ExecuteCommandList() {
+Error Device::ExecuteCommandList() {
   ID3D12CommandList* list[] = {cmdList.get()};
   cmdQueue->ExecuteCommandLists(1, list);
   return fence->SignalAndWait();
 }
 
-Error RHI::Present() {
-  HRESULT hr = swapchain->Present(1, 0);
-  if (FAILED(hr)) {
-    return Error{Unknown, std::format("Presentation of the SwapChain failed: {}", hr)};
-  }
-  return Error{};
-}
-Error RHI::BeginFrame() {
-  currentBuffer = swapchain->GetCurrentBackBufferIndex();
+Error Device::BeginFrame(Swapchain* swapchain) {
+  if (swapchain == nullptr)
+    return Error{InvalidArgument, "Could not begin frame: swapchain is nullptr"};
 
+  swapchain->setCurrentBuffer();
   HRESULT hr = cmdAlloc->Reset();
   if (FAILED(hr))
     return Error{Unknown, std::format("Command allocator reset failed: {}", hr)};
@@ -98,23 +90,24 @@ Error RHI::BeginFrame() {
   D3D12_RESOURCE_BARRIER barr = {};
   barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barr.Transition.pResource = buffers[currentBuffer];
+  barr.Transition.pResource = swapchain->getCurrentBuffer();
   barr.Transition.Subresource = 0;
   barr.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
   barr.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
   cmdList->ResourceBarrier(1, &barr);
-  cmdList->ClearRenderTargetView(rtvHandles[currentBuffer], (f32[4]){.4f, .4f, .8f, 1.f}, 0,
-    nullptr);
-  cmdList->OMSetRenderTargets(1, &rtvHandles[currentBuffer], false, nullptr);
+  auto currentRtvHandle = swapchain->getCurrentRtvHandle();
+  cmdList->ClearRenderTargetView(currentRtvHandle, (f32[4]){.4f, .4f, .8f, 1.f}, 0, nullptr);
+  cmdList->OMSetRenderTargets(1, swapchain->getCurrentRtvHandlePtr(), false, nullptr);
 
   return Error{};
 }
-Error RHI::EndFrame() {
+
+Error Device::EndFrame(Swapchain* swapchain) {
   D3D12_RESOURCE_BARRIER barr = {};
   barr.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
   barr.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-  barr.Transition.pResource = buffers[currentBuffer];
+  barr.Transition.pResource = swapchain->getCurrentBuffer();
   barr.Transition.Subresource = 0;
   barr.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
   barr.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
@@ -128,29 +121,13 @@ Error RHI::EndFrame() {
   return Error{};
 }
 
-Error RHI::Resize(const uint16_t width, const uint16_t height) {
-  fence->Flush(FRAME_COUNT);
-  HRESULT hr =
-    swapchain->ResizeBuffers(FRAME_COUNT, width, height, DXGI_FORMAT_UNKNOWN, SWAPCHAIN_FLAGS);
-  if (FAILED(hr)) {
-    return Error{Unknown, std::format("SwapChain could not be resized: {}", hr)};
-  }
-  return Error{};
-}
-
-Error RHI::Update() {
+Error Device::Submit() {
   Error err;
   err = ExecuteCommandList();
-  if (err.code != None)
-    return err;
-
-  err = Present();
-  if (err)
-    return err;
   return err;
 }
 
-void RHI::ConfigureRasterizer(const Vec2Rounded windowDimensions) {
+void Device::ConfigureRasterizer(const Vec2Rounded windowDimensions) {
   D3D12_VIEWPORT vp;
   vp.TopLeftX = vp.TopLeftY = 0;
   vp.Width = windowDimensions.x;
@@ -166,30 +143,15 @@ void RHI::ConfigureRasterizer(const Vec2Rounded windowDimensions) {
   cmdList->RSSetScissorRects(1, &scRect);
 }
 
-void RHI::Draw(const Vec2Rounded windowDimensions) {
+void Device::Draw(const Vec2Rounded windowDimensions) {
   SetPipelineState();
   ConfigureInputAssembler();
   ConfigureRasterizer(windowDimensions);
   ConfigureOutputMerger();
   cmdList->DrawInstanced(_countof(verticies), 1, 0, 0);
 }
-Error RHI::GetBuffers() {
-  D3D12_RENDER_TARGET_VIEW_DESC desc{};
-  desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-  desc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-  desc.Texture2D.MipSlice = 0;
-  desc.Texture2D.PlaneSlice = 0;
 
-  for (size_t i = 0; i < FRAME_COUNT; i++) {
-    HRESULT hr = swapchain->GetBuffer(i, IID_PPV_ARGS(&buffers[i]));
-    if (FAILED(hr))
-      return Error{Unknown, std::format("Getting the following buffer failed: nr.{}, {}", i, hr)};
-    device->CreateRenderTargetView(buffers[i].get(), &desc, rtvHandles[i]);
-  }
-  return Error{};
-}
-
-Error RHI::createCmdQueue() {
+Error Device::createCmdQueue() {
   D3D12_COMMAND_QUEUE_DESC cmdQueDesc = {};
   cmdQueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
   cmdQueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
@@ -200,7 +162,7 @@ Error RHI::createCmdQueue() {
     return Error{InvalidArgument, std::format("cmdQueue could not be created: {}", hr)};
   return Error{};
 }
-Error RHI::createFence() {
+Error Device::createFence() {
   Error err;
   fence = std::make_unique<Fence>(device.get(), cmdQueue, err);
   if (err)
@@ -211,7 +173,7 @@ Error RHI::createFence() {
   return Error{};
 }
 
-Error RHI::createCommandAllocator() {
+Error Device::createCommandAllocator() {
   HRESULT hr =
     device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
   if (FAILED(hr)) {
@@ -220,7 +182,7 @@ Error RHI::createCommandAllocator() {
   return Error{};
 }
 
-Error RHI::CreateCommandList() {
+Error Device::createCommandList() {
   HRESULT hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc, nullptr,
     IID_PPV_ARGS(&cmdList));
   if (FAILED(hr))
@@ -231,66 +193,7 @@ Error RHI::CreateCommandList() {
   return Error{};
 }
 
-Error RHI::CreateSwapChain(const HWND hwnd, const Vec2Rounded windowDimensions) {
-  bool isSupported = false;
-  HRESULT hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &isSupported,
-    sizeof(isSupported));
-  if (FAILED(hr))
-    return Error{FeatureNotSupported, "Tearing does not work"};
-
-  DXGI_SWAP_CHAIN_DESC1 desc = {};
-  desc.Width = windowDimensions.x;
-  desc.Height = windowDimensions.y;
-  desc.Stereo = false;
-  desc.Format = COLOR_FORMAT;
-  desc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  desc.BufferCount = FRAME_COUNT;
-  desc.SampleDesc.Count = 1;
-  desc.SampleDesc.Quality = 0;
-  desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-  desc.Scaling = DXGI_SCALING_STRETCH;
-  desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
-  desc.Flags = SWAPCHAIN_FLAGS;
-
-  DXGI_SWAP_CHAIN_FULLSCREEN_DESC descFull = {};
-  descFull.Windowed = !fullscreen;
-
-  IDXGISwapChain1* tempSwapChain = nullptr;
-  hr = factory->CreateSwapChainForHwnd(cmdQueue, hwnd, &desc, &descFull, nullptr, &tempSwapChain);
-  if (FAILED(hr))
-    return Error{InvalidArgument, std::format("Temp. SwapChain could not be created: {}", hr)};
-
-  hr = tempSwapChain->QueryInterface(IID_PPV_ARGS(&swapchain));
-  if (FAILED(hr))
-    return Error{
-      Unknown, std::format("Ok how tf did the real swapchain creation failed???: {}", hr)
-    };
-
-  tempSwapChain->Release();
-  return Error{};
-}
-
-Error RHI::CreateRtvHeap() {
-  D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-  desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-  desc.NumDescriptors = 2;
-  desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-  desc.NodeMask = 0;
-
-  HRESULT hr = device->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&rtvHeap));
-  if (FAILED(hr))
-    return Error{InvalidArgument, std::format("Creating the rtv Heap failed: {}", hr)};
-
-  auto firstHandle = rtvHeap->GetCPUDescriptorHandleForHeapStart();
-  auto handleIncrement = device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-  for (size_t i = 0; i < FRAME_COUNT; i++) {
-    rtvHandles[i] = firstHandle;
-    rtvHandles[i].ptr += handleIncrement * i;
-  }
-  return Error{};
-}
-
-Error RHI::CreateUploadAndVertexBuffer() {
+Error Device::createUploadAndVertexBuffer() {
   D3D12_HEAP_PROPERTIES hpDefault{
     .Type = D3D12_HEAP_TYPE_DEFAULT,
     .CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN,
@@ -363,7 +266,7 @@ Error RHI::CreateUploadAndVertexBuffer() {
     .RasterizedStream = 0,
   };
   gfxPsod.NumRenderTargets = 1;
-  gfxPsod.RTVFormats[0] = COLOR_FORMAT;
+  gfxPsod.RTVFormats[0] = Swapchain::COLOR_FORMAT;
   gfxPsod.DSVFormat = DXGI_FORMAT_UNKNOWN;
   gfxPsod.BlendState.AlphaToCoverageEnable = false;
   gfxPsod.BlendState.IndependentBlendEnable = false;
@@ -485,7 +388,8 @@ Error RHI::CreateUploadAndVertexBuffer() {
 
   return Error{};
 }
-Error RHI::CreateSrvHeap() {
+
+Error Device::createSrvHeap() {
   D3D12_DESCRIPTOR_HEAP_DESC desc{};
   desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
   desc.NumDescriptors = 64;
@@ -500,5 +404,4 @@ Error RHI::CreateSrvHeap() {
   srvHeap->Create(device.get(), srvDescriptorHeap.get());
   return Error{};
 }
-
 };  // namespace Tessera
