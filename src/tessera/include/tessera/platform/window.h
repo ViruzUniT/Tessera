@@ -1,8 +1,8 @@
 #pragma once
+#include <stdint.h>
 #include <tessera/pch.h>
 #include <tessera/renderer/imgui.h>
-#include <tessera/rhi_dx12/rhi.h>
-#include <stdint.h>
+#include <tessera/rhi_dx12/device.h>
 
 #include <unordered_map>
 
@@ -18,7 +18,8 @@ struct Window {
   RECT windowPos;
   Scope<DearImGui> imgui;
 
-  Ref<RHI> rhi;
+  Ref<Device> device;
+  Swapchain* swapchain;
 
   enum CmdShow { Hide = 0, ShowNormal = 1, ShowMaximized = 3, Show = 5 };
 

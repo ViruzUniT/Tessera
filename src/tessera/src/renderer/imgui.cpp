@@ -2,24 +2,24 @@
 #include <tessera/rhi_dx12/descriptorAllocator.h>
 
 namespace Tessera {
-DearImGui::DearImGui(WeakRef<RHI> wRhi, const HWND hwnd)
-    : context(ImGui::CreateContext()), io(ImGui::GetIO()), wRhi(wRhi) {
+DearImGui::DearImGui(WeakRef<Device> wDevice, const HWND hwnd)
+    : context(ImGui::CreateContext()), io(ImGui::GetIO()), wDevice(wDevice) {
   IMGUI_CHECKVERSION();
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
   io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
   io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-  auto rhi = wRhi.lock();
-  if (!rhi)
+  auto device = wDevice.lock();
+  if (!device)
     return;
 
   ImGui_ImplDX12_InitInfo initInfo = {};
-  initInfo.Device = rhi->getDevice();
-  initInfo.CommandQueue = rhi->getCmdQueue();
-  initInfo.NumFramesInFlight = FRAME_COUNT;
-  initInfo.RTVFormat = rhi->COLOR_FORMAT;
-  initInfo.SrvDescriptorHeap = rhi->getSrvDescriptorHeap();
-  initInfo.UserData = rhi->getSrvHeap();
+  initInfo.Device = device->getDevice();
+  initInfo.CommandQueue = device->getCmdQueue();
+  initInfo.NumFramesInFlight = Swapchain::FRAME_COUNT;
+  initInfo.RTVFormat = Swapchain::COLOR_FORMAT;
+  initInfo.SrvDescriptorHeap = device->getSrvDescriptorHeap();
+  initInfo.UserData = device->getSrvHeap();
   initInfo.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo* info,
                                     D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle,
                                     D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) {
@@ -52,14 +52,16 @@ DearImGui::~DearImGui() {
 }
 
 Error DearImGui::Render() {
-  auto rhi = wRhi.lock();
-  if (!rhi)
-    return Error{ErrorCode::InvalidArgument, "Could not render Imgui. WeakRef of rhi is nullptr"};
+  auto device = wDevice.lock();
+  if (!device)
+    return Error{
+      ErrorCode::InvalidArgument, "Could not render Imgui. WeakRef of Device is nullptr"
+    };
 
   ImGui::Render();
-  ID3D12DescriptorHeap* descriptorHeaps[] = {rhi->getSrvDescriptorHeap()};
-  rhi->getCmdList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), rhi->getCmdList());
+  ID3D12DescriptorHeap* descriptorHeaps[] = {device->getSrvDescriptorHeap()};
+  device->getCmdList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+  ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), device->getCmdList());
   ImGui::UpdatePlatformWindows();
   ImGui::RenderPlatformWindowsDefault();
   return Error{};

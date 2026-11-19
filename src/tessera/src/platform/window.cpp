@@ -28,7 +28,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_SIZE:
       if (lParam && window != nullptr &&
           (HIWORD(lParam) != window->dimensions.y || LOWORD(lParam) != window->dimensions.x)) {
-        Tessera::logTrace("Resizing window");
+        Tessera::logTrace("WndProc Resizing window");
         Tessera::Error err = window->Resize();
         if (err.code != Tessera::ErrorCode::None)
           Tessera::logError(err.message);
@@ -93,18 +93,28 @@ Window::Window(uint16_t width, uint16_t height, std::string_view name, std::stri
     return;
   }
 
-  logTrace("Creating RHI");
-  Error err = RHI::Create(hwnd, dimensions, fullscreen, rhi);
-
+  logTrace("Creating Device");
+  Error err = Device::Create(device);
   if (err) {
-    Tessera::logError(std::format("RHI could not be created: {}", static_cast<int>(err.code)));
+    Tessera::logError(std::format("Device could not be created: {}", static_cast<int>(err.code)));
     Tessera::logError(err.message);
     std::exit(1);
     return;
   }
 
+  logTrace("Creating Swapchain");
+  err = device->CreateSwapchain(fullscreen, dimensions, hwnd);
+  if (err) {
+    Tessera::logError(
+      std::format("Swapchain could not be created: {}", static_cast<int>(err.code)));
+    Tessera::logError(err.message);
+    std::exit(1);
+    return;
+  }
+  swapchain = device->getSwapchain(device->getSwapchainSize() - 1);
+
   logTrace("Creating imgui");
-  imgui = std::make_unique<DearImGui>(rhi, hwnd);
+  imgui = std::make_unique<DearImGui>(device, hwnd);
   windows.insert_or_assign(hwnd, this);
 };
 
@@ -156,7 +166,7 @@ Error Window::Update() {
   // TODO
   // Handle window screen locked
 
-  Error err = rhi->BeginFrame();
+  Error err = device->BeginFrame(swapchain);
   if (err)
     return err;
 
@@ -184,18 +194,22 @@ Error Window::Update() {
     ImGui::End();
   }
 
-  rhi->Draw(dimensions);
+  device->Draw(dimensions);
 
   imgui->Render();
 
-  err = rhi->EndFrame();
+  err = device->EndFrame(swapchain);
   if (err)
     return err;
 
-  err = rhi->Update();
+  err = device->Submit();
   if (err)
     return err;
-  return Error{};
+
+  err = swapchain->Present();
+  if (err)
+    return err;
+  return err;
 }
 
 Error Window::Resize(bool autoResize, std::optional<Vec2Rounded> newDimensions) {
@@ -216,13 +230,8 @@ Error Window::Resize(bool autoResize, std::optional<Vec2Rounded> newDimensions) 
       };
   }
 
-  rhi->ReleaseBuffers();
-
-  Error err = rhi->Resize(dimensions.x, dimensions.y);
-  if (err)
-    return err;
-
-  return rhi->GetBuffers();
+  Error err = swapchain->Resize(dimensions.x, dimensions.y, device->getDevice());
+  return err;
 }
 
 Error Window::SetFullscreen(bool enable) {

@@ -1,18 +1,18 @@
 #pragma once
 
 #include <tessera/pch.h>
-#include <tessera/rhi_dx12/rhi.h>
+#include <tessera/rhi_dx12/device.h>
 
 namespace Tessera {
 
 struct DearImGui {
-  DearImGui(WeakRef<RHI> wRhi, const HWND hwnd);
+  DearImGui(WeakRef<Device> wDevice, const HWND hwnd);
   ~DearImGui();
 
   Error Render();
 
   ImGuiContext* context;
   ImGuiIO& io;
-  WeakRef<RHI> wRhi;
+  WeakRef<Device> wDevice;
 };
 }  // namespace Tessera
