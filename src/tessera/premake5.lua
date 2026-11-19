@@ -45,8 +45,12 @@ buildoptions({
 	"-Wextra",
 	"-Werror",
 	"-Wunused-result",
-	"-fsanitize=undefined,address",
 })
+
+-- Sanitizers in DEBUG and STAGING only. A static library has no link step, so only the compile
+-- flag goes here; the runtime is linked by the executable (see src/sandbox/premake5.lua).
+filter({ "configurations:DEBUG or STAGING", "toolset:gcc or toolset:clang" })
+buildoptions({ "-fsanitize=undefined,address" })
 
 filter("toolset:msc")
 warnings("Extra")

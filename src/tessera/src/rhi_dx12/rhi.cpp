@@ -139,7 +139,7 @@ Error RHI::Resize(const uint16_t width, const uint16_t height) {
 }
 
 Error RHI::Update() {
-  static Error err;
+  Error err;
   err = ExecuteCommandList();
   if (err.code != None)
     return err;
@@ -215,9 +215,7 @@ Error RHI::createCommandAllocator() {
   HRESULT hr =
     device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAlloc));
   if (FAILED(hr)) {
-    return Error{
-      InvalidArgumentIGuess, std::format("Command Allocator could not be created: {}", hr)
-    };
+    return Error{InvalidArgument, std::format("Command Allocator could not be created: {}", hr)};
   }
   return Error{};
 }
@@ -226,7 +224,7 @@ Error RHI::CreateCommandList() {
   HRESULT hr = device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, cmdAlloc, nullptr,
     IID_PPV_ARGS(&cmdList));
   if (FAILED(hr))
-    return Error{InvalidArgumentIGuess, std::format("Command list could not be created: {}", hr)};
+    return Error{InvalidArgument, std::format("Command list could not be created: {}", hr)};
   hr = cmdList->Close();
   if (FAILED(hr))
     return Error{Unknown, std::format("Command list couldn't be closed: {}", hr)};
@@ -234,6 +232,12 @@ Error RHI::CreateCommandList() {
 }
 
 Error RHI::CreateSwapChain(const HWND hwnd, const Vec2Rounded windowDimensions) {
+  bool isSupported = false;
+  HRESULT hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &isSupported,
+    sizeof(isSupported));
+  if (FAILED(hr))
+    return Error{FeatureNotSupported, "Tearing does not work"};
+
   DXGI_SWAP_CHAIN_DESC1 desc = {};
   desc.Width = windowDimensions.x;
   desc.Height = windowDimensions.y;
@@ -252,12 +256,9 @@ Error RHI::CreateSwapChain(const HWND hwnd, const Vec2Rounded windowDimensions) 
   descFull.Windowed = !fullscreen;
 
   IDXGISwapChain1* tempSwapChain = nullptr;
-  HRESULT hr =
-    factory->CreateSwapChainForHwnd(cmdQueue, hwnd, &desc, &descFull, nullptr, &tempSwapChain);
+  hr = factory->CreateSwapChainForHwnd(cmdQueue, hwnd, &desc, &descFull, nullptr, &tempSwapChain);
   if (FAILED(hr))
-    return Error{
-      InvalidArgumentIGuess, std::format("Temp. SwapChain could not be created: {}", hr)
-    };
+    return Error{InvalidArgument, std::format("Temp. SwapChain could not be created: {}", hr)};
 
   hr = tempSwapChain->QueryInterface(IID_PPV_ARGS(&swapchain));
   if (FAILED(hr))

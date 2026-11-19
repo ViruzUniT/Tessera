@@ -1,6 +1,6 @@
 # Tessera
 
-A C++23 engine with DirectX 12 and Vulkan behind one backend-neutral API, designed for multiple windows from the start.
+A 3D-only C++23 engine with DirectX 12 and Vulkan behind one backend-neutral API, designed for multiple windows from the start.
 
 - **Now:** a code-only engine library, an optional ImGui dev UI (DEBUG/STAGING) and the Sandbox sample app.
 - **Later:** an editor and Luau scripting.

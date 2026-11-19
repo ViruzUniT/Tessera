@@ -40,6 +40,11 @@ buildoptions({
 	"-Werror",
 	"-Wunused-result",
 })
+
+-- Sanitizers in DEBUG and STAGING only: instrument this project's code and link the runtime.
+-- Must match the compile flag in src/tessera/premake5.lua, or the link misses __asan_* symbols.
+filter({ "configurations:DEBUG or STAGING", "toolset:gcc or toolset:clang" })
+buildoptions({ "-fsanitize=undefined,address" })
 linkoptions({ "-fsanitize=undefined,address" })
 
 filter("toolset:msc")
@@ -110,7 +115,6 @@ filter("configurations:DEBUG")
 defines({ "TESSERA_DEBUG", "TESSERA_DEV_UI" })
 runtime("Debug")
 symbols("on")
-filter("system:windows")
 links({
 	"dxgi",
 	"dxguid",

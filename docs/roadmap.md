@@ -1,6 +1,6 @@
 # Roadmap
 
-Milestones in recommended order. Each one ends with something you can run and check. The current milestone and its next steps are in `docs/status.md`.
+Tessera is a **3D-only** engine; there is no 2D renderer on the roadmap. Milestones in recommended order. Each one ends with something you can run and check. The current milestone and its next steps are in `docs/status.md`.
 
 Items tagged *(review)* come from the architecture review in the "Ngin Architecture Report" (written before the rename).
 
@@ -8,8 +8,8 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 
 - [x] Rename the project to Tessera (namespace, include paths, macros, premake projects, docs). Sandbox keeps its name.
 - [x] Replace `build.ps1`/`build.sh` with premake commands: `premake5 gen|build|run|compdb|clean` (`premake/actions.lua`), DXC bootstrap in Lua (`premake/dxc.lua`); CI, hooks and docs updated.
-- [ ] Sanitizers in DEBUG only (they are currently in every config, including RELEASE).
-- [ ] Fix `Error::message`: it is a `string_view` filled from `std::format` temporaries, so it dangles. Own the string, or keep messages static.
+- [x] Sanitizers only outside RELEASE: ASan + UBSan compiled and linked in DEBUG and STAGING.
+- [x] Fix `Error::message`: now an owning `std::string` (`f97452d`).
 
 **Exit:** a fresh clone builds and runs with `premake5` commands only; no wrapper scripts left.
 
@@ -55,23 +55,37 @@ Done before adding features, because a second backend is the only real test of t
 
 **Exit:** Sandbox (M1–M3 scope) runs the same on DX12 and Vulkan, with clean validation on both.
 
-## M5 — Core rendering for code-only use
+## M5 — Graphics pipeline
 
-- [ ] Buffers and textures with upload paths; descriptor/binding model decision; pipelines from descriptions, with a cache.
-- [ ] 2D: batched quads, sprites/atlases, text, debug draw.
-- [ ] 3D: meshes, camera/transforms, depth, basic materials.
+Replaces today's hard-coded, single-purpose pipeline with a general one that both backends implement. It comes after M4, so the design fits DX12 and Vulkan instead of only DX12. M1 already handles the frame flow (allocators, fences, frames in flight); this milestone covers everything recorded inside a frame.
+
+- [ ] **Resources:** buffers and textures created from descriptions; a real upload path (per-frame staging/upload memory instead of one-off upload buffers); deferred destruction once the GPU is done with a frame.
+- [ ] **Binding model:** decide between descriptor tables and bindless; engine-owned descriptor heap allocation; one shared root signature / pipeline layout.
+- [ ] **Pipelines:** PSOs built from descriptions (shaders, vertex layout, blend, depth, raster state), with a cache; never created per frame. Shader reflection drives the bindings instead of hand-written root signatures.
+- [ ] **Synchronization:** resource state tracking with explicit, batched barriers.
+- [ ] **Render passes:** color and depth targets, clear/load/store, resize-aware; offscreen targets (needed by the editor viewport).
+- [ ] **Shader workflow:** HLSL compiled for both backends as part of the engine build; optional shader hot reload in DEBUG.
+- [ ] **Measuring:** GPU timestamps and debug markers (PIX/RenderDoc) per pass.
+
+**Exit:** Sandbox draws a textured, depth-tested mesh through pipelines and passes built from descriptions, on both backends. No per-frame PSO/heap creation or allocation; validation is clean; GPU time per pass is visible.
+
+## M6 — 3D rendering for code-only use
+
+- [ ] Meshes and model loading (format choice and dependency need approval), camera, transforms.
+- [ ] Materials and basic lighting.
+- [ ] 3D debug drawing (lines, boxes, grids).
 - [ ] Platform: input and timing.
 
-**Exit:** a Sandbox demo with a 2D scene and a 3D mesh, on both backends.
+**Exit:** a Sandbox demo with a lit, textured 3D scene and a moving camera, on both backends.
 
-## M6 — Editor
+## M7 — Editor
 
 - [ ] New `Editor` project on `Tessera` + `dev_ui`: docking layout, scene viewport rendered to a texture.
 - [ ] Scene and entities (ECS choice is a separate decision), inspector, scene serialization, asset browser, play/stop.
 
 **Exit:** create, save and reload a scene in the editor, rendered in the viewport.
 
-## M7 — Scripting (Luau)
+## M8 — Scripting (Luau)
 
 - [ ] Embed Luau; binding layer over the public API; script components.
 - [ ] Hot reload; script errors in the editor console; type definitions for luau-lsp.

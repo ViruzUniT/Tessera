@@ -4,7 +4,6 @@
 #include <tessera/pch.h>
 
 #include <format>
-#include <string_view>
 namespace Tessera {
 enum ErrorCode {
   CouldBeAProblem = -1,
@@ -12,17 +11,17 @@ enum ErrorCode {
   Exit,
   Unknown,
   InvalidArgument,
-  InvalidArgumentIGuess,
   FileNotFound,
   PlatformError,
   GraphicsError,
   FenceError,
-  FenceTimeout
+  FenceTimeout,
+  FeatureNotSupported
 };
 
 struct Error {
   ErrorCode code = ErrorCode::None;
-  std::string_view message = {};
+  std::string message = {};
   inline explicit operator bool() const noexcept {
     if (code == CouldBeAProblem)
       Tessera::logDebug(std::format("A potential error has occurred: {}", message));
