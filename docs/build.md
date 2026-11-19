@@ -51,4 +51,4 @@ Generating and building download the pinned DXC into `.tools/dxc/` when it's mis
 
 ## CI
 
-`.github/workflows/` builds DEBUG and RELEASE with Clang + Make on pull requests, through `premake5 gen` and `premake5 build`.
+`.github/workflows/` builds DEBUG and RELEASE with Clang + Make on pull requests, through `premake5 gen` and `premake5 build`. Both workflows install a pinned llvm-mingw (release `20260505`, LLVM 22.1.5, UCRT; SHA-256 checked, cached) so CI uses the same compiler and standard library as local builds. Don't use the runner's preinstalled LLVM: it targets the MSVC STL, which fails when the image's Visual Studio expects a newer Clang. To upgrade, change the release name and hash in both workflow files.
