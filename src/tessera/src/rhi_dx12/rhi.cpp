@@ -232,7 +232,7 @@ Error RHI::CreateCommandList() {
 }
 
 Error RHI::CreateSwapChain(const HWND hwnd, const Vec2Rounded windowDimensions) {
-  bool isSupported = false;
+  BOOL isSupported = false;
   HRESULT hr = factory->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &isSupported,
     sizeof(isSupported));
   if (FAILED(hr))
