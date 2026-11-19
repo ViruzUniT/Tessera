@@ -11,12 +11,12 @@ enum ErrorCode {
   Exit,
   Unknown,
   InvalidArgument,
-  InvalidArgumentIGuess,
   FileNotFound,
   PlatformError,
   GraphicsError,
   FenceError,
-  FenceTimeout
+  FenceTimeout,
+  FeatureNotSupported
 };
 
 struct Error {

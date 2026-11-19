@@ -28,7 +28,9 @@ M0 is complete (2026-11-17).
 - 2026-11-17: Scripting language is **Luau**.
 - 2026-11-17: ImGui ships as an optional `dev_ui` module (DEBUG/STAGING), used by Sandbox now and by the editor later.
 - 2026-11-17: App model is a library core plus an optional `Application` layer.
-- 2026-11-17: Vulkan bring-up (M4) comes before feature work (M5) to validate the RHI early.
+- 2026-11-17: Vulkan bring-up (M4) comes before the pipeline work (M5) and features (M6) to validate the RHI early.
+- 2026-11-17: Tessera is **3D-only**; no 2D renderer.
+- 2026-11-17: The graphics pipeline gets its own milestone (M5) after Vulkan, so its design fits both backends.
 - 2026-11-17: Backend is selected at renderer creation; backend differences are exposed through a capability query.
 - 2026-11-17: Sanitizers run in DEBUG and STAGING (STAGING catches bugs that only appear with optimizations), not RELEASE.
 - Root-signature serialization blobs are temporary; no RHI storage unless diagnostics or reflection need them later.

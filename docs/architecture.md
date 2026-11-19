@@ -1,6 +1,6 @@
 # Architecture
 
-Tessera is a C++23 engine built in two parts: a **code-only engine library** first, and an **editor** on top of it later. It renders through DirectX 12 and Vulkan behind one backend-neutral API, and supports several windows from the start.
+Tessera is a **3D-only** C++23 engine built in two parts: a **code-only engine library** first, and an **editor** on top of it later. It renders through DirectX 12 and Vulkan behind one backend-neutral API, and supports several windows from the start.
 
 ## Products
 
@@ -9,8 +9,8 @@ Tessera is a C++23 engine built in two parts: a **code-only engine library** fir
 | `Tessera` | Static library: core, platform, renderer, RHI, backends. Everything user code needs. | Now |
 | `dev_ui` | Optional ImGui module (context, panels, per-backend bindings). `DEBUG`/`STAGING` only. | Now (as a module from M2) |
 | `Sandbox` | Sample and test app that uses only the public API. Not renamed; it's a test harness. | Now |
-| `Editor` | ImGui docking editor built on `Tessera` + `dev_ui`. | M6 |
-| Scripting | Luau scripts driving entities in the editor and runtime. | M7 |
+| `Editor` | ImGui docking editor built on `Tessera` + `dev_ui`. | M7 |
+| Scripting | Luau scripts driving entities in the editor and runtime. | M8 |
 
 Milestones: `docs/roadmap.md`.
 
@@ -40,7 +40,7 @@ platform, core: usable by every layer above
 | `platform` | OS windows, events, input, timing, files. Window = native handle + events. | Know about rendering, RHI or ImGui. |
 | `rhi` | Contracts: device, swapchain, queues, command lists, buffers, textures, descriptors, pipelines, sync, capabilities. Typed handles. | Include native graphics headers. |
 | `rhi_dx12`, `rhi_vulkan` | Native objects, lifetime, synchronization, translation of descriptions, ImGui renderer binding, debug/validation layers. | Leak through public headers. |
-| `renderer` | Engine-facing API: frame loop, frames in flight, render targets per window, 2D/3D paths. | Name a specific backend. |
+| `renderer` | Engine-facing 3D API: frame loop, frames in flight, render targets per window, passes, meshes, materials. | Name a specific backend. |
 | `dev_ui` | ImGui context and panels; calls the backend binding through the RHI. Guarded by `TESSERA_DEV_UI`. | Be required by `renderer` or RELEASE builds. |
 
 ## App model
@@ -51,7 +51,7 @@ An optional **`Application`** layer (`OnInit`/`OnUpdate`/`OnRender`, loop and ev
 
 ## Backend policy
 
-**Shared** (written once): resource/pipeline/shader descriptions, material and shader metadata, frame scheduling concepts, 2D batching, 3D submission, dev UI panels.
+**Shared** (written once): resource/pipeline/shader descriptions, material and shader metadata, frame scheduling concepts, 3D submission, dev UI panels.
 
 **Per backend**: device and swapchain creation, allocation, descriptor model, command recording, synchronization, pipeline objects, shader bytecode loading, ImGui renderer binding, validation layer setup.
 
@@ -97,7 +97,7 @@ src/
     src/<module>/               implementations (backend headers move here in M2)
     shaders/                    HLSL sources
   sandbox/                      sample app
-  editor/                       later (M6)
+  editor/                       later (M7)
 vendor/                         third-party submodules (imgui, ...)
 build/                          generated project files
 bin/, bin-int/                  build outputs
@@ -105,7 +105,9 @@ bin/, bin-int/                  build outputs
 
 Module names in docs (`renderer`, `rhi_dx12`, `dev_ui`) are the folder names.
 
-## Future rendering paths
+## Rendering scope
 
-- **2D**: batched textured quads, sprite atlases, SDF/atlas text, debug drawing. Same renderer/RHI path, not a separate backend.
-- **3D**: mesh buffers, materials, textures, pipeline descriptions, camera/transforms, render passes (a frame graph later if needed).
+Tessera renders **3D only**. There is no 2D renderer (no sprites, batched quads or 2D text); on-screen UI is ImGui in DEBUG/STAGING and the editor.
+
+- **Pipeline (M5)**: resources from descriptions with a real upload path, an engine-owned binding model, PSOs from descriptions + shader reflection with a cache, tracked resource states and batched barriers, render passes with depth and offscreen targets, GPU timing per pass.
+- **3D (M6)**: meshes and model loading, camera/transforms, materials, basic lighting, 3D debug drawing. A frame graph comes later if passes outgrow manual ordering.

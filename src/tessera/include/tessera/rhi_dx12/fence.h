@@ -15,7 +15,7 @@ struct Fence : NonCopyable {
     }
     HRESULT hr = device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     if (FAILED(hr)) {
-      err = Error{InvalidArgumentIGuess, std::format("Creating fence failed: {}", hr)};
+      err = Error{InvalidArgument, std::format("Creating fence failed: {}", hr)};
       return;
     }
 
@@ -49,9 +49,7 @@ struct Fence : NonCopyable {
 
     HRESULT hr = cmdQueue->Signal(fence.get(), ++fenceValue);
     if (FAILED(hr))
-      return Error{
-        InvalidArgumentIGuess, std::format("Signaling the Command Queue failed: {}", hr)
-      };
+      return Error{InvalidArgument, std::format("Signaling the Command Queue failed: {}", hr)};
 
     hr = fence->SetEventOnCompletion(fenceValue, fenceEvent);
     if (FAILED(hr))

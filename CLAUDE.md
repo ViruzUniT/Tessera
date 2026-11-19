@@ -1,11 +1,11 @@
 # CLAUDE.md
 
-Tessera: C++23 engine. Code-only library first (+ optional ImGui `dev_ui`, Sandbox), editor and Luau scripting later. DX12 and Vulkan behind one backend-neutral API; multi-window by design.
+Tessera: 3D-only C++23 engine. Code-only library first (+ optional ImGui `dev_ui`, Sandbox), editor and Luau scripting later. DX12 and Vulkan behind one backend-neutral API; multi-window by design.
 
 ## Docs (read when relevant, not by default)
 
 - `docs/status.md` — current milestone, next steps, decisions, known issues. Read before planning new work.
-- `docs/roadmap.md` — milestones M0–M7 in order, with exit criteria.
+- `docs/roadmap.md` — milestones M0–M8 in order, with exit criteria.
 - `docs/architecture.md` — products, layers, backend policy, multi-window and app model, folder layout.
 - `docs/build.md` — toolchain, commands, configs, DXC/shaders, CI.
 - `docs/improvements.md` — known suboptimal spots and better approaches; optional, revisit when in the area.
