@@ -29,7 +29,8 @@ M0 is complete (2026-11-17).
 
 - 2026-11-17: Engine renamed **Tessera**; Sandbox keeps its name.
 - 2026-11-17: Scripting language is **Luau**.
-- 2026-11-17: ImGui ships as an optional `dev_ui` module (DEBUG/STAGING), used by Sandbox now and by the editor later.
+- 2026-11-17: ImGui ships as an optional `dev_ui` module, used by Sandbox now and by the editor later.
+- 2026-11-20: `dev_ui` is always on in the editor and opt-in per game through a premake build option (off by default, any config including RELEASE). Replaces "DEBUG/STAGING only".
 - 2026-11-17: App model is a library core plus an optional `Application` layer.
 - 2026-11-17: Vulkan bring-up (M4) comes before the pipeline work (M5) and features (M6) to validate the RHI early.
 - 2026-11-17: Tessera is **3D-only**; no 2D renderer.

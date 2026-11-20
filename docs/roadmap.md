@@ -15,7 +15,7 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 
 ## M1 — Frame ownership and clear color *(review: fix now)*
 
-- [ ] Split `RHI` into **Device** (created once) and **Swapchain** (per window: back buffers, RTVs, resize). The empty `swapchain.h/.cpp` are its home.
+- [x] Split `RHI` into **Device** (created once) and **Swapchain** (per window: back buffers, RTVs, resize). The empty `swapchain.h/.cpp` are its home.
 - [ ] **Renderer owns the frame loop** (begin/end frame, resize forwarding). `Window` shrinks to native handle + events and stops including `rhi_dx12`, `renderer` and ImGui.
 - [ ] **Frames in flight**: one command allocator and fence value per back buffer; wait only for the frame being reused.
 - [ ] Move content out of the engine *(review)*: triangle geometry and PSO choice go to Sandbox through the renderer API; the ImGui panel goes to Sandbox.
@@ -30,7 +30,7 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 - [ ] Validation/debug layer moves into the backend and is enabled through renderer settings; Sandbox stops calling `DXDebugLayer`.
 - [ ] PCH = standard library + `core` only; Win32 and ImGui are included where used. *(review: PCH as dependency channel)*
 - [ ] The engine owns and builds its shaders into its own output; Sandbox no longer compiles them. *(review)*
-- [ ] `dev_ui` becomes an optional module; the DX12 ImGui binding moves behind the backend.
+- [ ] `dev_ui` becomes an optional module; the DX12 ImGui binding moves behind the backend. Each app opts in with a premake build option (off by default, any config); Sandbox opts in. `core/config.h` stops rejecting `TESSERA_DEV_UI` in RELEASE.
 - [ ] Optional `Application` layer on top of the library API.
 
 **Exit:** Sandbox includes only `<tessera/...>` public headers and contains no backend type; the backend is one setting (only DX12 exists yet).

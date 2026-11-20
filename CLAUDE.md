@@ -14,7 +14,7 @@ Tessera: 3D-only C++23 engine. Code-only library first (+ optional ImGui `dev_ui
 
 - Dependencies flow app/tools → `renderer` → `rhi` → backend (`rhi_dx12`). Never upward.
 - Shared code (`core`, `platform`, `renderer`, `rhi`, app) never includes DX12/DXGI/Vulkan headers or uses native objects.
-- ImGui code is guarded by `#if TESSERA_DEV_UI`; `RELEASE` contains no ImGui, debug panels or dev menus.
+- ImGui code is guarded by `#if TESSERA_DEV_UI` and lives in `dev_ui`; `core`, `platform`, `rhi` and `renderer` never require it. The editor always enables `dev_ui`; a game opts in per project with a build option (off by default, allowed in every config, RELEASE included). An app that didn't opt in contains no ImGui.
 - Never edit `vendor/`, add dependencies, or commit generated output (`build/`, `bin/`, `bin-int/`, `compile_commands.json`) without asking.
 
 ## Working mode

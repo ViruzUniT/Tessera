@@ -6,6 +6,8 @@
 #include <tessera/rhi_dx12/fence.h>
 #include <tessera/rhi_dx12/swapchain.h>
 
+#include <expected>
+
 #include "tessera/rhi_dx12/descriptorAllocator.h"
 
 namespace Tessera {
@@ -19,7 +21,8 @@ class Device : public NonCopyableNonMovable {
     fence.reset();
   }
   static Error Create(Ref<Device>& device);
-  Error CreateSwapchain(bool fullscreen, Vec2Rounded dimensions, HWND hwnd);
+  std::expected<Swapchain*, Error> CreateSwapchain(bool fullscreen, Vec2Rounded dimensions,
+    HWND hwnd);
 
  public:
   Error Submit();

@@ -7,7 +7,7 @@ Tessera is a **3D-only** C++23 engine built in two parts: a **code-only engine l
 | Product | What it is | When |
 |---|---|---|
 | `Tessera` | Static library: core, platform, renderer, RHI, backends. Everything user code needs. | Now |
-| `dev_ui` | Optional ImGui module (context, panels, per-backend bindings). `DEBUG`/`STAGING` only. | Now (as a module from M2) |
+| `dev_ui` | Optional ImGui module (context, panels, per-backend bindings). Always on in the editor; games opt in per project. | Now (as a module from M2) |
 | `Sandbox` | Sample and test app that uses only the public API. Not renamed; it's a test harness. | Now |
 | `Editor` | ImGui docking editor built on `Tessera` + `dev_ui`. | M7 |
 | Scripting | Luau scripts driving entities in the editor and runtime. | M8 |
@@ -41,7 +41,7 @@ platform, core: usable by every layer above
 | `rhi` | Contracts: device, swapchain, queues, command lists, buffers, textures, descriptors, pipelines, sync, capabilities. Typed handles. | Include native graphics headers. |
 | `rhi_dx12`, `rhi_vulkan` | Native objects, lifetime, synchronization, translation of descriptions, ImGui renderer binding, debug/validation layers. | Leak through public headers. |
 | `renderer` | Engine-facing 3D API: frame loop, frames in flight, render targets per window, passes, meshes, materials. | Name a specific backend. |
-| `dev_ui` | ImGui context and panels; calls the backend binding through the RHI. Guarded by `TESSERA_DEV_UI`. | Be required by `renderer` or RELEASE builds. |
+| `dev_ui` | ImGui context and panels; calls the backend binding through the RHI. Guarded by `TESSERA_DEV_UI`. | Be required by `renderer`, or end up in an app that didn't opt in. |
 
 ## App model
 
@@ -68,13 +68,15 @@ An optional **`Application`** layer (`OnInit`/`OnUpdate`/`OnRender`, loop and ev
 
 ## Configurations
 
-| Config | Optimized | Diagnostics, validation | `dev_ui` / ImGui |
-|---|---|---|---|
-| `DEBUG` | no | yes | yes |
-| `STAGING` | yes | yes | yes |
-| `RELEASE` | yes | no | never compiled |
+| Config | Optimized | Diagnostics, validation |
+|---|---|---|
+| `DEBUG` | no | yes |
+| `STAGING` | yes | yes |
+| `RELEASE` | yes | no |
 
 `core/config.h` turns invalid combinations into build errors.
+
+**ImGui (`dev_ui`) is a per-app choice, independent of the config.** The editor always enables it. A game enables it with a premake build option in its project (off by default), in any config, RELEASE included, for example for an in-game debug menu that ships. The option defines `TESSERA_DEV_UI` and links `dev_ui`; an app without it compiles and links no ImGui code.
 
 ## Principles to keep
 
@@ -107,7 +109,7 @@ Module names in docs (`renderer`, `rhi_dx12`, `dev_ui`) are the folder names.
 
 ## Rendering scope
 
-Tessera renders **3D only**. There is no 2D renderer (no sprites, batched quads or 2D text); on-screen UI is ImGui in DEBUG/STAGING and the editor.
+Tessera renders **3D only**. There is no 2D renderer (no sprites, batched quads or 2D text); on-screen UI is ImGui through `dev_ui` (the editor, and games that opt in).
 
 - **Pipeline (M5)**: resources from descriptions with a real upload path, an engine-owned binding model, PSOs from descriptions + shader reflection with a cache, tracked resource states and batched barriers, render passes with depth and offscreen targets, GPU timing per pass.
 - **3D (M6)**: meshes and model loading, camera/transforms, materials, basic lighting, 3D debug drawing. A frame graph comes later if passes outgrow manual ordering.

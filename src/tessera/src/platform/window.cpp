@@ -103,15 +103,15 @@ Window::Window(uint16_t width, uint16_t height, std::string_view name, std::stri
   }
 
   logTrace("Creating Swapchain");
-  err = device->CreateSwapchain(fullscreen, dimensions, hwnd);
-  if (err) {
+  auto res = device->CreateSwapchain(fullscreen, dimensions, hwnd);
+  if (!res) {
     Tessera::logError(
       std::format("Swapchain could not be created: {}", static_cast<int>(err.code)));
     Tessera::logError(err.message);
     std::exit(1);
     return;
   }
-  swapchain = device->getSwapchain(device->getSwapchainSize() - 1);
+  swapchain = *res;
 
   logTrace("Creating imgui");
   imgui = std::make_unique<DearImGui>(device, hwnd);
