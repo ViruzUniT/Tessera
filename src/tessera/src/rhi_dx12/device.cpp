@@ -3,12 +3,11 @@
 namespace Tessera {
 Error Device::Create(Ref<Device>& device) {
   Error err;
-  Device* tempDevice = new Device(err);
-  if (err) {
-    delete tempDevice;
+  Ref<Device> tempDevice(new Device(err));
+  if (err)
     return err;
-  }
-  device.reset(tempDevice);
+
+  device = tempDevice;
   return Error{};
 }
 std::expected<Swapchain*, Error> Device::CreateSwapchain(bool fullscreen, Vec2Rounded dimensions,
