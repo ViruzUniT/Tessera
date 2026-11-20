@@ -3,7 +3,7 @@
 #include <tessera/platform/window.h>
 
 namespace Tessera {
-struct Device;
+class Device;
 struct DearImGui;
 struct Swapchain;
 
