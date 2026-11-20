@@ -11,14 +11,15 @@ Error Device::Create(Ref<Device>& device) {
   device.reset(tempDevice);
   return Error{};
 }
-Error Device::CreateSwapchain(bool fullscreen, Vec2Rounded dimensions, HWND hwnd) {
+std::expected<Swapchain*, Error> Device::CreateSwapchain(bool fullscreen, Vec2Rounded dimensions,
+  HWND hwnd) {
   Ref<Swapchain> swapchain;
   Error err = Swapchain::Create(swapchain, fullscreen, dimensions, hwnd, fence.get(), getDevice(),
     getFactory(), getCmdQueue());
   if (err)
-    return err;
+    return std::unexpected(err);
   swapchains.push_back(swapchain);
-  return err;
+  return swapchain.get();
 }
 
 Device::Device(Error& err) {

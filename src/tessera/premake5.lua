@@ -68,12 +68,12 @@ links({
 toolset("clang")
 
 filter("configurations:DEBUG")
-defines({ "TESSERA_DEBUG", "TESSERA_DEV_UI" })
+defines({ "TESSERA_DEBUG" })
 runtime("Debug")
 symbols("on")
 
 filter("configurations:STAGING")
-defines({ "TESSERA_STAGING", "TESSERA_DEV_UI" })
+defines({ "TESSERA_STAGING" })
 runtime("Release")
 optimize("Speed")
 symbols("on")

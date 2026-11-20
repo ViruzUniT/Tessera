@@ -33,7 +33,7 @@ premake5 clean                            # removes build/, bin/, bin-int/, comp
 
 ## Configurations
 
-Configurations are `DEBUG`, `STAGING` and `RELEASE`; what each one enables is in `docs/architecture.md`. The defines are `TESSERA_DEBUG`/`TESSERA_STAGING`/`TESSERA_RELEASE`, plus `TESSERA_DEV_UI` in DEBUG and STAGING.
+Configurations are `DEBUG`, `STAGING` and `RELEASE`; what each one enables is in `docs/architecture.md`. The defines are `TESSERA_DEBUG`/`TESSERA_STAGING`/`TESSERA_RELEASE`, ImGui is compiled into the library in every config and has no define of its own.
 
 AddressSanitizer and UndefinedBehaviorSanitizer (`-fsanitize=undefined,address`) are on in DEBUG and STAGING with Clang/GCC: the compile flag goes on both projects, and the link flag only on executables. RELEASE has no sanitizers. ASan needs `libclang_rt.asan_dynamic-x86_64.dll` from the llvm-mingw toolchain on `PATH` at runtime.
 

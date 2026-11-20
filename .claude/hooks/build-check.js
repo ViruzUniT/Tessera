@@ -9,7 +9,7 @@ const { spawnSync } = require("child_process");
 
 const MAX_ATTEMPTS = 3;
 const BUILD_EXT = /\.(c|cc|cpp|cxx|h|hh|hpp|hxx|inl|hlsl|hlsli|lua)$/i;
-const RELEASE_TRIGGER = /(\.lua$|core\/config\.h$|imgui|dev_ui)/i;
+const RELEASE_TRIGGER = /(\.lua$|core\/config\.h$)/i;
 
 const mode = process.argv[2];
 let raw = "";

@@ -6,16 +6,6 @@
 #error "Exactly one build configuration must be defined: TESSERA_DEBUG, TESSERA_STAGING, or TESSERA_RELEASE."
 #endif
 
-#if defined(TESSERA_DEV_UI)
-#define TESSERA_HAS_DEV_UI 1
-#else
-#define TESSERA_HAS_DEV_UI 0
-#endif
-
-#if defined(TESSERA_RELEASE) && TESSERA_HAS_DEV_UI
-#error "TESSERA_DEV_UI must not be enabled in RELEASE builds."
-#endif
-
 // Platform -------------------------------------------------------------------
 
 #if defined(_WIN32)
