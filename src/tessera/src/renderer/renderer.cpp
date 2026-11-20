@@ -14,6 +14,33 @@ Error Renderer::Create(Ref<Renderer>& renderer, Window& window) {
   return err;
 }
 
+Renderer::Renderer(Window& window, Error& err) : dimensions(window.dimensions) {
+  logTrace("Creating Device");
+  err = Device::Create(device);
+  if (err) {
+    Tessera::logError(std::format("Device could not be created: {}", static_cast<int>(err.code)));
+    Tessera::logError(err.message);
+    std::exit(1);
+    return;
+  }
+
+  logTrace("Creating Swapchain");
+  auto res = device->CreateSwapchain(window.fullscreen, window.dimensions, window.hwnd);
+  if (!res) {
+    Tessera::logError(
+      std::format("Swapchain could not be created: {}", static_cast<int>(err.code)));
+    Tessera::logError(err.message);
+    std::exit(1);
+    return;
+  }
+  swapchain = *res;
+
+  logTrace("Creating imgui");
+  imgui = std::make_unique<DearImGui>(device, window.hwnd);
+}
+
+Renderer::~Renderer() { logTrace("Destructing Renderer"); }
+
 Error Renderer::BeginFrame() {
   Error err = device->BeginFrame(swapchain);
   if (err)
@@ -48,31 +75,4 @@ Error Renderer::Resize(Vec2Rounded dimensions) {
   this->dimensions = dimensions;
   return swapchain->Resize(dimensions.x, dimensions.y, device->getDevice());
 }
-
-Renderer::Renderer(Window& window, Error& err) : dimensions(window.dimensions) {
-  logTrace("Creating Device");
-  err = Device::Create(device);
-  if (err) {
-    Tessera::logError(std::format("Device could not be created: {}", static_cast<int>(err.code)));
-    Tessera::logError(err.message);
-    std::exit(1);
-    return;
-  }
-
-  logTrace("Creating Swapchain");
-  auto res = device->CreateSwapchain(window.fullscreen, window.dimensions, window.hwnd);
-  if (!res) {
-    Tessera::logError(
-      std::format("Swapchain could not be created: {}", static_cast<int>(err.code)));
-    Tessera::logError(err.message);
-    std::exit(1);
-    return;
-  }
-  swapchain = *res;
-
-  logTrace("Creating imgui");
-  imgui = std::make_unique<DearImGui>(device, window.hwnd);
-}
-
-Renderer::~Renderer() { logTrace("Destructing Renderer"); }
-}  // namespace Tessera
+};  // namespace Tessera
