@@ -1,8 +1,6 @@
 #pragma once
 #include <stdint.h>
 #include <tessera/pch.h>
-#include <tessera/renderer/imgui.h>
-#include <tessera/rhi_dx12/device.h>
 
 #include <unordered_map>
 
@@ -15,6 +13,7 @@ struct Window {
   HWND hwnd = nullptr;
   ATOM w_class = 0;
   bool fullscreen = false;
+  bool hasResized = false;
   RECT windowPos;
 
   enum CmdShow { Hide = 0, ShowNormal = 1, ShowMaximized = 3, Show = 5 };

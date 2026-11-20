@@ -16,7 +16,7 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 ## M1 — Frame ownership and clear color *(review: fix now)*
 
 - [x] Split `RHI` into **Device** (created once) and **Swapchain** (per window: back buffers, RTVs, resize). The empty `swapchain.h/.cpp` are its home.
-- [ ] **Renderer owns the frame loop** (begin/end frame, resize forwarding). `Window` shrinks to native handle + events and stops including `rhi_dx12`, `renderer` and ImGui.
+- [x] **Renderer owns the frame loop** (begin/end frame, resize forwarding). `Window` shrinks to native handle + events and stops including `rhi_dx12`, `renderer` and ImGui.
 - [ ] **Frames in flight**: one command allocator and fence value per back buffer; wait only for the frame being reused.
 - [ ] Move content out of the engine *(review)*: triangle geometry and PSO choice go to Sandbox through the renderer API; the ImGui panel goes to Sandbox.
 - [ ] Remove the unused second `Shader` in `rhi_dx12/shader.h`.

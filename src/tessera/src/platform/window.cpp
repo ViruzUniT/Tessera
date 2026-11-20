@@ -93,28 +93,6 @@ Window::Window(uint16_t width, uint16_t height, std::string_view name, std::stri
     return;
   }
 
-  logTrace("Creating Device");
-  Error err = Device::Create(device);
-  if (err) {
-    Tessera::logError(std::format("Device could not be created: {}", static_cast<int>(err.code)));
-    Tessera::logError(err.message);
-    std::exit(1);
-    return;
-  }
-
-  logTrace("Creating Swapchain");
-  auto res = device->CreateSwapchain(fullscreen, dimensions, hwnd);
-  if (!res) {
-    Tessera::logError(
-      std::format("Swapchain could not be created: {}", static_cast<int>(err.code)));
-    Tessera::logError(err.message);
-    std::exit(1);
-    return;
-  }
-  swapchain = *res;
-
-  logTrace("Creating imgui");
-  imgui = std::make_unique<DearImGui>(device, hwnd);
   windows.insert_or_assign(hwnd, this);
 };
 
@@ -148,8 +126,6 @@ Error Window::Update() {
   if (hwnd == 0) {
     return Error{PlatformError, "Window handle is NULL"};
   }
-  static bool showDemoWindow = false;
-
   CheckForClosableWindows();
 
   MSG msg;
@@ -166,50 +142,7 @@ Error Window::Update() {
   // TODO
   // Handle window screen locked
 
-  Error err = device->BeginFrame(swapchain);
-  if (err)
-    return err;
-
-  ImGui_ImplDX12_NewFrame();
-  ImGui_ImplWin32_NewFrame();
-  ImGui::NewFrame();
-
-  if (showDemoWindow)
-    ImGui::ShowDemoWindow();
-  {
-    static float f = 0.0f;
-    static int counter = 0;
-
-    ImGui::Begin("Fuck yeah");
-
-    ImGui::Text("Text ig");
-    ImGui::SliderFloat("floaty boi", &f, 0.f, 100.1f);
-
-    if (ImGui::Button("Count my ass"))
-      counter++;
-    ImGui::SameLine();
-    ImGui::Text("counter: = %d", counter);
-
-    ImGui::Checkbox("Demo Window", &showDemoWindow);
-    ImGui::End();
-  }
-
-  device->Draw(dimensions);
-
-  imgui->Render();
-
-  err = device->EndFrame(swapchain);
-  if (err)
-    return err;
-
-  err = device->Submit();
-  if (err)
-    return err;
-
-  err = swapchain->Present();
-  if (err)
-    return err;
-  return err;
+  return Error{};
 }
 
 Error Window::Resize(bool autoResize, std::optional<Vec2Rounded> newDimensions) {
@@ -230,8 +163,8 @@ Error Window::Resize(bool autoResize, std::optional<Vec2Rounded> newDimensions) 
       };
   }
 
-  Error err = swapchain->Resize(dimensions.x, dimensions.y, device->getDevice());
-  return err;
+  hasResized = true;
+  return Error{};
 }
 
 Error Window::SetFullscreen(bool enable) {

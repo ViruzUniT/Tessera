@@ -9,11 +9,11 @@ M0 is complete (2026-11-17).
 ### Done
 
 - 2026-11-19: `RHI` split into `Device` (device, queue, fence, command list, SRV heap, triangle) and `Swapchain` (back buffers, own RTV heap, tearing check, one-call resize); the device owns its swapchains.
+- 2026-11-20: `Renderer` owns device, swapchain and ImGui and runs begin/end frame and resize; `Window` only pumps messages and flags resizes; Sandbox drives the loop and draws the ImGui panel.
 
 ### Next steps
 
-1. Renderer owns the frame loop; `Window` shrinks to native handle + events.
-2. Frames in flight: one command allocator and fence value per back buffer.
+1. Frames in flight: one command allocator and fence value per back buffer.
 
 ## Current state
 
@@ -23,7 +23,7 @@ M0 is complete (2026-11-17).
 - Build workflow is premake-only: `premake5 gen|build|run|compdb|clean` (`premake/actions.lua`), DXC bootstrap in `premake/dxc.lua`. `premake5 run` also writes all output to `run.log`.
 - ASan + UBSan instrument both projects in DEBUG and STAGING (Clang/GCC); RELEASE has none.
 - CI builds DEBUG and RELEASE on pull requests.
-- `renderer/renderer.cpp` is empty; `Window` holds the `Device` (shared with ImGui) and a borrowed `Swapchain*`, and runs the frame loop; one frame in flight.
+- `Renderer` (created by the app) owns `Device`, a borrowed `Swapchain*` and ImGui; Sandbox runs the loop (poll → resize → begin → panel → end); one frame in flight.
 
 ## Decisions
 
@@ -41,6 +41,6 @@ M0 is complete (2026-11-17).
 ## Known issues
 
 - `core/DXDebugLayer.h` includes DX12/DXGI headers, and Sandbox calls it directly (fixed in M2).
-- `platform/window.h` and `renderer/imgui.h` include `rhi_dx12/device.h` (fixed in M1/M2).
+- `renderer/imgui.h` includes `rhi_dx12/device.h`; `platform/window.cpp` still calls ImGui's Win32 message handler directly (moves behind a window message hook; M1/M2).
 - `pch.h` pulls `windows.h`, ImGui and the ImGui DX12/Win32 backends into every file (M2).
 - UBSan reports "upcast of misaligned address … for type `ID3D12Resource`" once when ImGui creates a platform window. Cause: `vendor/imgui/backends/imgui_impl_dx12.cpp:1166` passes an uninitialized local to `IID_PPV_ARGS`. It's harmless in practice (the value is overwritten right after) and lives in vendor code. Options: ignore it, exclude `vendor/imgui` from UBSan, or report it upstream.

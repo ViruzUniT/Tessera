@@ -44,26 +44,20 @@ Error Swapchain::Create(Ref<Swapchain>& swapchain, const bool fullscreen,
   Vec2Rounded windowDimensions, const HWND hwnd, Fence* fence, ID3D12Device10* device,
   IDXGIFactory7* factory, ID3D12CommandQueue* cmdQueue) {
   Error err = Error{};
-  Swapchain* buf = new Swapchain(err, fullscreen, windowDimensions, hwnd, factory, cmdQueue);
-  if (err) {
-    delete buf;
+  Ref<Swapchain> buf(new Swapchain(err, fullscreen, windowDimensions, hwnd, factory, cmdQueue));
+  if (err)
     return err;
-  }
 
   err = buf->createRtvHeap(device);
-  if (err) {
-    delete buf;
+  if (err)
     return err;
-  }
 
   err = buf->GetBuffers(device);
-  if (err) {
-    delete buf;
+  if (err)
     return err;
-  }
 
   buf->fence = fence;
-  swapchain.reset(buf);
+  swapchain = buf;
   return err;
 }
 
