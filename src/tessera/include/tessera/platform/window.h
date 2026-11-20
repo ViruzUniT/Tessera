@@ -16,10 +16,6 @@ struct Window {
   ATOM w_class = 0;
   bool fullscreen = false;
   RECT windowPos;
-  Scope<DearImGui> imgui;
-
-  Ref<Device> device;
-  Swapchain* swapchain;
 
   enum CmdShow { Hide = 0, ShowNormal = 1, ShowMaximized = 3, Show = 5 };
 
@@ -28,7 +24,6 @@ struct Window {
 
   Window(uint16_t width, uint16_t height, std::string_view name, std::string_view className);
   ~Window() {
-    imgui.reset();
     logTrace("Desturcting window");
     Close();
   }
