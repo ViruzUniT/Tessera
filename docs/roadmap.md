@@ -30,7 +30,7 @@ Items tagged *(review)* come from the architecture review in the "Ngin Architect
 - [ ] Validation/debug layer moves into the backend and is enabled through renderer settings; Sandbox stops calling `DXDebugLayer`.
 - [ ] PCH = standard library + `core` only; Win32 and ImGui are included where used. *(review: PCH as dependency channel)*
 - [ ] The engine owns and builds its shaders into its own output; Sandbox no longer compiles them. *(review)*
-- [ ] `dev_ui` becomes an optional module; the DX12 ImGui binding moves behind the backend. Each app opts in with a premake build option (off by default, any config); Sandbox opts in. `core/config.h` stops rejecting `TESSERA_DEV_UI` in RELEASE.
+- [ ] The DX12 ImGui binding moves behind the backend; the renderer drives ImGui without naming a backend.
 - [ ] Optional `Application` layer on top of the library API.
 
 **Exit:** Sandbox includes only `<tessera/...>` public headers and contains no backend type; the backend is one setting (only DX12 exists yet).
@@ -50,7 +50,7 @@ Done before adding features, because a second backend is the only real test of t
 
 - [ ] `rhi_vulkan` module; validation layers in DEBUG/STAGING. New dependencies (loader, memory allocator) need approval first.
 - [ ] DXC compiles the same HLSL to SPIR-V.
-- [ ] Vulkan ImGui binding for `dev_ui`.
+- [ ] Vulkan ImGui binding.
 - [ ] Document backend differences found along the way, and expose them through capabilities.
 
 **Exit:** Sandbox (M1–M3 scope) runs the same on DX12 and Vulkan, with clean validation on both.
@@ -80,7 +80,7 @@ Replaces today's hard-coded, single-purpose pipeline with a general one that bot
 
 ## M7 — Editor
 
-- [ ] New `Editor` project on `Tessera` + `dev_ui`: docking layout, scene viewport rendered to a texture.
+- [ ] New `Editor` project on `Tessera`: docking layout, scene viewport rendered to a texture.
 - [ ] Scene and entities (ECS choice is a separate decision), inspector, scene serialization, asset browser, play/stop.
 
 **Exit:** create, save and reload a scene in the editor, rendered in the viewport.

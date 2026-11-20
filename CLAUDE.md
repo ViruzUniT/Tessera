@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Tessera: 3D-only C++23 engine. Code-only library first (+ optional ImGui `dev_ui`, Sandbox), editor and Luau scripting later. DX12 and Vulkan behind one backend-neutral API; multi-window by design.
+Tessera: 3D-only C++23 engine. Code-only library first (with ImGui built in, + Sandbox), editor and Luau scripting later. DX12 and Vulkan behind one backend-neutral API; multi-window by design.
 
 ## Docs (read when relevant, not by default)
 
@@ -14,7 +14,7 @@ Tessera: 3D-only C++23 engine. Code-only library first (+ optional ImGui `dev_ui
 
 - Dependencies flow app/tools → `renderer` → `rhi` → backend (`rhi_dx12`). Never upward.
 - Shared code (`core`, `platform`, `renderer`, `rhi`, app) never includes DX12/DXGI/Vulkan headers or uses native objects.
-- ImGui code is guarded by `#if TESSERA_DEV_UI` and lives in `dev_ui`; `core`, `platform`, `rhi` and `renderer` never require it. The editor always enables `dev_ui`; a game opts in per project with a build option (off by default, allowed in every config, RELEASE included). An app that didn't opt in contains no ImGui.
+- ImGui is part of the library, always compiled in (no guards or defines); apps decide whether they use it. `core` and `platform` never call ImGui.
 - Never edit `vendor/`, add dependencies, or commit generated output (`build/`, `bin/`, `bin-int/`, `compile_commands.json`) without asking.
 
 ## Working mode
@@ -44,7 +44,7 @@ Everything else (`gen`, `compdb`, `clean`): `docs/build.md`.
 No test framework yet; the vertical slice is the test.
 
 1. `premake5 build DEBUG` — no new warnings.
-2. `premake5 build RELEASE` when touching `TESSERA_DEV_UI` guards, config logic, or premake files.
+2. `premake5 build RELEASE` when touching config logic (`core/config.h`) or premake files.
 3. For runtime changes, tell the user what to check in `run DEBUG` / `run STAGING` (Claude cannot see the window). After the user runs it, read `run.log` (output of the last `premake5 run`) instead of asking them to paste output.
 4. On failure, paste the relevant compiler / debug-layer output.
 

@@ -112,7 +112,7 @@ filter("system:windows")
 systemversion("latest")
 
 filter("configurations:DEBUG")
-defines({ "TESSERA_DEBUG", "TESSERA_DEV_UI" })
+defines({ "TESSERA_DEBUG" })
 runtime("Debug")
 symbols("on")
 links({
@@ -121,7 +121,7 @@ links({
 })
 
 filter("configurations:STAGING")
-defines({ "TESSERA_STAGING", "TESSERA_DEV_UI" })
+defines({ "TESSERA_STAGING" })
 runtime("Release")
 optimize("Speed")
 symbols("on")

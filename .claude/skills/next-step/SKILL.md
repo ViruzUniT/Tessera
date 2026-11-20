@@ -14,7 +14,7 @@ Plan one step of Tessera work. Do not edit files in this skill.
    - **Goal** — one sentence; what is observably different when done.
    - **Changes** — per file: what changes and why. Mark new files.
    - **Contracts** — any change to `rhi`/`renderer` public headers, and how it stays backend-neutral.
-   - **Risks** — lifetime/synchronization hazards (GPU in-flight resources, resize, shutdown order), layering, `TESSERA_DEV_UI`/RELEASE impact.
+   - **Risks** — lifetime/synchronization hazards (GPU in-flight resources, resize, shutdown order), layering, RELEASE impact.
    - **Verify** — build configs to run and what the user should look for in `run DEBUG` (window output, debug-layer messages, clean live-object report on exit).
    - **Split** — if larger than one reviewable diff, propose smaller sub-steps.
 5. End by asking: does the user want to implement it themselves (you then guide), or have you implement it?
